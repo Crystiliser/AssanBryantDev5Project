@@ -27,8 +27,31 @@ namespace MathLibrary
 
 namespace functionLibrary
 {
-	int functions::add(int a, int b)
+	FBXLoader::FBXLoader(char* newFileName)
 	{
-		return a + b;
+		iFileName = newFileName;
+		theManager = FbxManager::Create();
+		theScene = FbxScene::Create(theManager, "");
+		theIOSettings = FbxIOSettings::Create(theManager, IOSROOT);
+		theManager->SetIOSettings(theIOSettings);
+	}
+	FBXLoader::~FBXLoader()
+	{
+		theManager->Destroy();
+	}
+	void FBXLoader::importer()
+	{
+		FbxImporter* theImporter = FbxImporter::Create(theManager, "");
+		if (!theImporter->Initialize(iFileName, -1, theManager->GetIOSettings()))
+		{
+			printf("Error importing");
+		}
+
+		theImporter->Import(theScene);
+		theImporter->Destroy();
+	}
+	void FBXLoader::saver()
+	{
+
 	}
 }

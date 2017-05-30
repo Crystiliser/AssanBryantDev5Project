@@ -1,4 +1,5 @@
 #pragma once
+#include <fbxsdk.h>
 
 #ifdef LOADERDEFINE
 #define LOADERAPI __declspec(dllexport)
@@ -8,9 +9,20 @@
 
 namespace functionLibrary
 {
-	class functions
+	class FBXLoader
 	{
 	public:
-		static LOADERAPI int add(int a, int b);
+		//variables
+		FbxManager* theManager;
+		FbxScene* theScene;
+		FbxIOSettings* theIOSettings;
+		FbxMesh* oMesh;
+		char* iFileName;
+
+		//functions
+		LOADERAPI FBXLoader(char* newFileName);
+		LOADERAPI ~FBXLoader();
+		LOADERAPI void importer();
+		LOADERAPI void saver();
 	};
 }
