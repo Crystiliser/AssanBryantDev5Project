@@ -1,5 +1,6 @@
 #pragma once
 #include <fbxsdk.h>
+#include "ExportFile.h"
 
 #ifdef LOADERDEFINE
 #define LOADERAPI __declspec(dllexport)
@@ -18,11 +19,12 @@ namespace functionLibrary
 		FbxIOSettings* theIOSettings;
 		FbxMesh* oMesh;
 		char* iFileName;
+		exportFile theData;
 
 		//functions
 		LOADERAPI FBXLoader(char* newFileName);
 		LOADERAPI ~FBXLoader();
 		LOADERAPI void importer();
-		LOADERAPI void saver();
+		LOADERAPI exportFile saver();
 	};
 }

@@ -35,10 +35,12 @@ namespace functionLibrary
 		theIOSettings = FbxIOSettings::Create(theManager, IOSROOT);
 		theManager->SetIOSettings(theIOSettings);
 	}
+
 	FBXLoader::~FBXLoader()
 	{
 		theManager->Destroy();
 	}
+
 	void FBXLoader::importer()
 	{
 		FbxImporter* theImporter = FbxImporter::Create(theManager, "");
@@ -50,8 +52,30 @@ namespace functionLibrary
 		theImporter->Import(theScene);
 		theImporter->Destroy();
 	}
-	void FBXLoader::saver()
-	{
 
+	exportFile FBXLoader::saver()
+	{
+		unsigned int geometryCount = theScene->GetGeometryCount();
+
+		for (unsigned int i = 0; i < geometryCount; i++)
+		{
+			FbxGeometry* object = theScene->GetGeometry(i);
+			FbxNodeAttribute::EType type = object->GetAttributeType();
+			if (type == FbxNodeAttribute::eMesh)
+			{
+				theData.verticeCount = object->GetControlPointsCount() * 3;
+				const FbxVector4* controlPoints = object->GetControlPoints();
+				FbxVector4 currentVertex;
+				for (unsigned int j = 0; j < theData.verticeCount; j++)
+				{
+					currentVertex = controlPoints[j];
+					theData.myData->position.x = currentVertex.mData[0];
+					theData.myData->position.y = currentVertex.mData[1];
+					theData.myData->position.z = currentVertex.mData[2];
+					theData.myData->position.w = currentVertex.mData[3];
+				}
+			}
+		}
+		return theData;
 	}
 }

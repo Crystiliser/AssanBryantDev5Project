@@ -1,8 +1,16 @@
-﻿  stdafx.cpp
-  dllmain.cpp
-  LoaderDLL.cpp
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(31): warning C4273: 'functionLibrary::functions::add': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(14): note: see previous definition of 'add'
-     Creating library C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.lib and object C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.exp
-  LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.dll
-  LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.pdb (Full PDB)
+﻿  LoaderDLL.cpp
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(31): warning C4273: 'functionLibrary::FBXLoader::FBXLoader': inconsistent dll linkage
+  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(25): note: see previous definition of '{ctor}'
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(40): warning C4273: 'functionLibrary::FBXLoader::~FBXLoader': inconsistent dll linkage
+  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(26): note: see previous definition of '{dtor}'
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(45): warning C4273: 'functionLibrary::FBXLoader::importer': inconsistent dll linkage
+  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(27): note: see previous definition of 'importer'
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(57): warning C4273: 'functionLibrary::FBXLoader::saver': inconsistent dll linkage
+  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(28): note: see previous definition of 'saver'
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(72): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(73): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(74): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(75): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
+     Creating library C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\Debug\LoaderDLL.lib and object C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\Debug\LoaderDLL.exp
+  LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\Debug\LoaderDLL.dll
+  LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\Debug\LoaderDLL.pdb (Full PDB)
