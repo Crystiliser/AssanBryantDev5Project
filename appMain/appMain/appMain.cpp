@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "appMain.h"
+#include "Loader.h"
 
 #define MAX_LOADSTRING 100
 

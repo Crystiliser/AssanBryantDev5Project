@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#if 0
 #include "TestHeader.h"
 
 namespace MathLibrary
@@ -19,5 +20,15 @@ namespace MathLibrary
 	double Functions::AddMultiply(double a, double b)
 	{
 		return a + (a * b);
+	}
+}
+#endif
+#include "Loader.h"
+
+namespace functionLibrary
+{
+	int functions::add(int a, int b)
+	{
+		return a + b;
 	}
 }
