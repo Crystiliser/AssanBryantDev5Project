@@ -17,5 +17,27 @@
 #include <memory.h>
 #include <tchar.h>
 
+#include <d3d11.h>
+#pragma comment(lib, "d3d11.lib")
 
-// TODO: reference additional headers your program requires here
+
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+#include <DirectXColors.h>
+#include <DirectXCollision.h>
+#include <wrl.h>
+#include <wrl/client.h>
+#include <wincodec.h>
+#include <DirectXColors.h>
+#include <DirectXMath.h>
+#include <memory>
+#include <concrt.h>
+#include <D3D11_1.h>
+
+using namespace DirectX;
+using namespace Colors;
+
+
+using namespace Microsoft::WRL;
+using namespace Windows::Foundation;
+

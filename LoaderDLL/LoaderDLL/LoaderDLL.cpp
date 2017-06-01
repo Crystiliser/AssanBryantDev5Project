@@ -63,16 +63,21 @@ namespace functionLibrary
 			FbxNodeAttribute::EType type = object->GetAttributeType();
 			if (type == FbxNodeAttribute::eMesh)
 			{
-				theData.verticeCount = object->GetControlPointsCount() * 3;
+				//theData.verticeCount = ((static_cast<FbxMesh*>(object))->GetPolygonCount()) * TRIANGLE_VERTEX_COUNT;
+				theData.verticeCount = object->GetControlPointsCount();
+				theData.myData = new exportFile::vertex[theData.verticeCount];
+				
 				const FbxVector4* controlPoints = object->GetControlPoints();
 				FbxVector4 currentVertex;
 				for (unsigned int j = 0; j < theData.verticeCount; j++)
 				{
+
 					currentVertex = controlPoints[j];
-					theData.myData->position.x = currentVertex.mData[0];
-					theData.myData->position.y = currentVertex.mData[1];
-					theData.myData->position.z = currentVertex.mData[2];
-					theData.myData->position.w = currentVertex.mData[3];
+					theData.myData[j].position.x = static_cast<float>(currentVertex[0]);
+					theData.myData[j].position.y = static_cast<float>(currentVertex[1]);
+					theData.myData[j].position.z = static_cast<float>(currentVertex[2]);
+					theData.myData[j].position.w = 1;
+				
 				}
 			}
 		}

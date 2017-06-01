@@ -1,4 +1,5 @@
-﻿  stdafx.cpp
-  appMain.cpp
+﻿  appMain.cpp
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(93): warning C4018: '<': signed/unsigned mismatch
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(113): warning C4018: '<': signed/unsigned mismatch
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.exe
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.pdb (Full PDB)
