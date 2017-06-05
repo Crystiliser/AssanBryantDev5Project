@@ -1,8 +1,8 @@
 
-cbuffer vertex : register(b0)
+cbuffer matriceData : register(b0)
 {
-	float4 position;
-	float4 color;
+	matrix view;
+	matrix projection;
 };
 
 struct vertexShaderInput
@@ -20,12 +20,12 @@ struct pixelShaderInput
 pixelShaderInput main( vertexShaderInput input )
 {
 	pixelShaderInput output;
-
-	output.pos.w = 1;
-	
-	output.pos.xyz = input.pos.xyz;
+	float4 position = float4(input.pos.xyz, 1);
 		
-	output.pos += position;
+	position = mul(position, view);
+	position = mul(position, projection);
+
+	output.pos = position;
 	
 	output.color = input.color;
 

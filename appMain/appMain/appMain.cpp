@@ -6,6 +6,7 @@
 #include "appMain.h"
 #include "Loader.h"
 #include "GraphicsSystem.h"
+#include <chrono>
 
 #define MAX_LOADSTRING 100
 #define BACKBUFFER_WIDTH 500
@@ -23,14 +24,26 @@ HWND hWnd;
 
 GraphicsSystem graphicsStuff;
 GraphicsSystem::pipelineData pipeData;
-GraphicsSystem::vertex* lines; 
+GraphicsSystem::vertex lines; 
 GraphicsSystem::vertex* object;
-XMMATRIX perspective;
+GraphicsSystem::matriceData matrixData;
 
-float timer = 0;
+//camera Stuff
+XMFLOAT4X4 camera;
+bool rotatingCamera = false;
+XMFLOAT2 point = { 0,0 };
+XMFLOAT2 prePoint = { 0,0 };
+
+//timer stuff
+
+using time_point_t = decltype(std::chrono::high_resolution_clock::now());
+
+time_point_t last_time;
+time_point_t curr_time;
+double accum_time{ 0.0 };
 
 float moveSpeed = 3;
-XMFLOAT4X4 camera;
+float rotSpd = 1;
 
 
 // Forward declarations of functions included in this code module:
@@ -87,8 +100,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	bool running = true;
 
 #pragma region SetupDrawData
-	pipeData.topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-	perspective = graphicsStuff.perspectiveProjection(BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
+	pipeData.topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+	XMMATRIX perspective = graphicsStuff.perspectiveProjection(BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
 	object = new GraphicsSystem::vertex[theData->verticeCount];
 	for (int i = 0; i < theData->verticeCount; i++)
 	{
@@ -105,49 +118,143 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT, object, theData->verticeCount);
-
-
-	pipeData.topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-	perspective = graphicsStuff.perspectiveProjection(BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
-	lines = new GraphicsSystem::vertex[theData->verticeCount];
-	for (int i = 0; i < theData->verticeCount; i++)
-	{
-		GraphicsSystem::vertex temp;
-		temp.color = XMFLOAT4(Red);
-
-		temp.position.x = 0;
-		temp.position.y = 0;
-		temp.position.z = 0;
-		temp.position.w = 0;
-
-		XMStoreFloat4(&temp.position, XMVector4Transform(XMLoadFloat4(
-			&temp.position), perspective));
-
-
-		lines[i] = temp;
-	}
 #pragma endregion
+
+#pragma region InitCameraStuff
+	float aspectRatio = BACKBUFFER_WIDTH / BACKBUFFER_HEIGHT;
+	float fovAngleY = 70 * XM_PI / 180.0f;
+
+	if (aspectRatio < 1.0f)
+	{
+		fovAngleY *= 2.0f;
+	}
+
+	XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, 0.01f, 100);
+	
+	XMStoreFloat4x4(&matrixData.projection, XMMatrixTranspose(perspectiveMatrix));
+
+	static const XMVECTORF32 eye = { 0.0f, 0.7f, -1.5f, 0.0f };
+	static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f,0.0f };
+	static const XMVECTORF32 up = { 0.0f,1.0f,0.0f,0.0f };
+
+	XMStoreFloat4x4(&camera, XMMatrixInverse(nullptr, XMMatrixLookAtLH(eye, at, up)));
+
+	XMStoreFloat4x4(&matrixData.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+
+#pragma endregion
+
+
 
 	while (running)
 	{
 
-			graphicsStuff.setPipelinesStages(&pipeData);
-			graphicsStuff.draw(&pipeData, lines, sizeof(GraphicsSystem::vertex) 
-				* theData->verticeCount, theData->verticeCount);
+		XMStoreFloat4x4(&matrixData.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
+
+		//timer stuff
+		curr_time = std::chrono::high_resolution_clock::now();
+
+		double delta_time = std::chrono::duration<double>(curr_time - last_time).count();
+
+		last_time = curr_time;
+
+		accum_time += delta_time;
+		//////////////////////
+
+		graphicsStuff.setPipelinesStages(&pipeData);
+		graphicsStuff.draw(&pipeData, &matrixData, 
+			sizeof(GraphicsSystem::matriceData), 
+			theData->verticeCount);
+
+		if (rotatingCamera)
+		{
+			float dx = point.x - prePoint.x;
+			float dy = point.y - prePoint.y;
+
+			XMFLOAT4 pos = XMFLOAT4(camera._41, camera._42, camera._43, camera._44);
+			camera._41 = 0;
+			camera._42 = 0;
+			camera._43 = 0;
+
+			XMMATRIX rotX = XMMatrixRotationX(dy * rotSpd * delta_time);
+			XMMATRIX rotY = XMMatrixRotationY(dx * rotSpd * delta_time);
+
+			XMMATRIX tempCam = XMLoadFloat4x4(&camera);
+			tempCam = XMMatrixMultiply(rotX, tempCam);
+			tempCam = XMMatrixMultiply(tempCam, rotY);
+
+			XMStoreFloat4x4(&camera, tempCam);
+
+			camera._41 = pos.x;
+			camera._42 = pos.y;
+			camera._43 = pos.z;
+
+		}
 
 		while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-			if (msg.message == WM_KEYDOWN)
+			switch (msg.message)
 			{
-				XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, -moveSpeed * timer);
-				XMMATRIX tempCam = XMLoadFloat4x4(&camera);
-				XMMATRIX result = XMMatrixMultiply(translation, tempCam);
-				XMStoreFloat4x4(&camera, result);
+			case WM_RBUTTONDOWN:
+			{
+				rotatingCamera = true;
 			}
-			if (msg.message == WM_QUIT)
+			break;
+			case WM_RBUTTONUP:
 			{
+				rotatingCamera = false;
+			}
+			break;
+			case WM_MOUSEMOVE:
+			{
+				XMFLOAT2 pos;
+				pos.x = LOWORD(msg.lParam);
+				pos.y = HIWORD(msg.lParam);
+
+				prePoint = point;
+				point = pos;
+			}
+			case WM_KEYDOWN:
+				switch (msg.wParam)
+				{
+				case 'W':
+				{
+					XMMATRIX translation = XMMatrixTranslation(0, 0, moveSpeed * delta_time);
+					XMMATRIX tempCam = XMLoadFloat4x4(&camera);
+					XMMATRIX result = XMMatrixMultiply(translation, tempCam);
+					XMStoreFloat4x4(&camera, result);
+				}
+					break;
+				case 'S':
+				{
+					XMMATRIX translation = XMMatrixTranslation(0, 0, -moveSpeed * delta_time);
+					XMMATRIX tempCam = XMLoadFloat4x4(&camera);
+					XMMATRIX result = XMMatrixMultiply(translation, tempCam);
+					XMStoreFloat4x4(&camera, result);
+				}
+					break;
+				case 'A':
+				{
+					XMMATRIX translation = XMMatrixTranslation(-moveSpeed * delta_time, 0, 0);
+					XMMATRIX tempCam = XMLoadFloat4x4(&camera);
+					XMMATRIX result = XMMatrixMultiply(translation, tempCam);
+					XMStoreFloat4x4(&camera, result);
+				}
+					break;
+				case 'D':
+				{
+					XMMATRIX translation = XMMatrixTranslation(moveSpeed * delta_time, 0, 0);
+					XMMATRIX tempCam = XMLoadFloat4x4(&camera);
+					XMMATRIX result = XMMatrixMultiply(translation, tempCam);
+					XMStoreFloat4x4(&camera, result);
+				}
+					break;
+				default:
+					break;
+				}
+				break;
+			case WM_QUIT:
 				running = false;
 #pragma region pipeline cleanup
 				pipeData.constantBuffer->Release();
@@ -158,17 +265,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				pipeData.devcon->Release();
 				pipeData.inputLayout->Release();
 				pipeData.pixelShader->Release();
-			//	pipeDatate.rasterState->Release();
+				//	pipeDatate.rasterState->Release();
 				pipeData.renderTarget->Release();
 				pipeData.swapchain->Release();
 				pipeData.vertexBuffer->Release();
 				pipeData.vertexShader->Release();
 #pragma endregion
 
+				break;
+			default:
+				break;
 			}
 		}
-
-		timer += 0.01f;
 	}
 
 #ifndef NDEBUG

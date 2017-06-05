@@ -27,6 +27,11 @@ public:
 		XMFLOAT4 position;
 		XMFLOAT4 color;
 	};
+	struct matriceData
+	{
+		XMFLOAT4X4 view;
+		XMFLOAT4X4 projection;
+	};
 
 	XMMATRIX perspectiveProjection(float width, float height);
 

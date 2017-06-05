@@ -83,7 +83,7 @@ void GraphicsSystem::basicSetUpBuffer(pipelineData * state, vertex* points, unsi
 	D3D11_BUFFER_DESC cBufferDesc;
 	ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
 	cBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	cBufferDesc.ByteWidth = sizeof(vertex) * size;
+	cBufferDesc.ByteWidth = sizeof(matriceData);
 	cBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	cBufferDesc.MiscFlags = 0;
