@@ -33,6 +33,13 @@ public:
 		XMFLOAT4X4 projection;
 	};
 
+	struct object
+	{
+		vertex* theObject;
+		matriceData theMatrix;
+		unsigned int count;
+	};
+
 	XMMATRIX perspectiveProjection(float width, float height);
 
 	void initViewport(pipelineData* state, unsigned int width, unsigned int height);
@@ -55,6 +62,8 @@ public:
 		unsigned int height, vertex* points, unsigned int size);
 
 	void draw(pipelineData* state, void* data, size_t size, int vertexCount);
+
+	void cleanUpPipeLine(pipelineData* state);
 
 	GraphicsSystem();
 	~GraphicsSystem();

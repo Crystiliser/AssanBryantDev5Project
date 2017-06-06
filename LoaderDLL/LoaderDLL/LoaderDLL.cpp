@@ -53,6 +53,36 @@ namespace functionLibrary
 		theImporter->Destroy();
 	}
 
+	exportFile FBXLoader::savePose(exportFile temp)
+	{
+		unsigned int poseCount = theScene->GetPoseCount();
+
+		for (unsigned int i = 0; i < poseCount; i++)
+		{
+			FbxPose* object = theScene->GetPose(i);
+			if (object->IsBindPose())
+			{
+				unsigned int nodeCount = object->GetCount();
+				for (unsigned int i = 0; i < nodeCount; i++)
+				{
+					FbxNode* node = object->GetNode(i);
+					FbxSkeleton* skeleton = node->GetSkeleton();
+					if (skeleton != nullptr)
+					{
+						if (skeleton->IsSkeletonRoot())
+						{
+							struct myFbxJoint { FbxNode* node; int parentIndex; };
+							std::vector<myFbxJoint>;
+							
+						}
+					}
+				}
+			}
+			
+		}
+		return temp;
+	}
+
 	exportFile FBXLoader::saver()
 	{
 		unsigned int geometryCount = theScene->GetGeometryCount();

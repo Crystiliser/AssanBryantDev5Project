@@ -13,7 +13,7 @@
 #define BACKBUFFER_HEIGHT 500
 
 //My Global Variables
-functionLibrary::FBXLoader theLoader("BattleMagewithRigandtextures.fbx");
+functionLibrary::FBXLoader theLoader("Battle Mage with Rig and textures.fbx");
 exportFile* theData = new exportFile;
 
 // Global Variables:
@@ -24,9 +24,12 @@ HWND hWnd;
 
 GraphicsSystem graphicsStuff;
 GraphicsSystem::pipelineData pipeData;
-GraphicsSystem::vertex lines; 
-GraphicsSystem::vertex* object;
-GraphicsSystem::matriceData matrixData;
+GraphicsSystem::object mesh;
+GraphicsSystem::object pose;
+
+//debug stuff
+GraphicsSystem::object debugger;
+unsigned int count;
 
 //camera Stuff
 XMFLOAT4X4 camera;
@@ -42,8 +45,8 @@ time_point_t last_time;
 time_point_t curr_time;
 double accum_time{ 0.0 };
 
-float moveSpeed = 3;
-float rotSpd = 1;
+float moveSpeed = 5.0f;
+float rotSpd = 0.5f;
 
 
 // Forward declarations of functions included in this code module:
@@ -99,10 +102,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	MSG msg;
 	bool running = true;
 
+#pragma region InitCameraStuff
+	float aspectRatio = BACKBUFFER_WIDTH / BACKBUFFER_HEIGHT;
+	float fovAngleY = 70 * XM_PI / 180.0f;
+
+	if (aspectRatio < 1.0f)
+	{
+		fovAngleY *= 2.0f;
+	}
+
+	XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, 0.01f, 100);
+
+	XMStoreFloat4x4(&mesh.theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
+
+	static const XMVECTORF32 eye = { 0.0f, 0.7f, -1.5f, 0.0f };
+	static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f,0.0f };
+	static const XMVECTORF32 up = { 0.0f,1.0f,0.0f,0.0f };
+
+	XMStoreFloat4x4(&camera, XMMatrixInverse(nullptr, XMMatrixLookAtLH(eye, at, up)));
+
+#pragma endregion
+
 #pragma region SetupDrawData
 	pipeData.topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
 	XMMATRIX perspective = graphicsStuff.perspectiveProjection(BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
-	object = new GraphicsSystem::vertex[theData->verticeCount];
+	mesh.theObject = new GraphicsSystem::vertex[theData->verticeCount];
 	for (int i = 0; i < theData->verticeCount; i++)
 	{
 		GraphicsSystem::vertex temp;
@@ -114,41 +138,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		temp.position.w = theData->myData[i].position.w;
 
 
-		object[i] = temp;
+		mesh.theObject[i] = temp;
 	}
+	mesh.count = theData->verticeCount;
 
-	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT, object, theData->verticeCount);
+	XMStoreFloat4x4(&mesh.theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+
+	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT, mesh.theObject, theData->verticeCount);
 #pragma endregion
 
-#pragma region InitCameraStuff
-	float aspectRatio = BACKBUFFER_WIDTH / BACKBUFFER_HEIGHT;
-	float fovAngleY = 70 * XM_PI / 180.0f;
-
-	if (aspectRatio < 1.0f)
-	{
-		fovAngleY *= 2.0f;
-	}
-
-	XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, 0.01f, 100);
-	
-	XMStoreFloat4x4(&matrixData.projection, XMMatrixTranspose(perspectiveMatrix));
-
-	static const XMVECTORF32 eye = { 0.0f, 0.7f, -1.5f, 0.0f };
-	static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f,0.0f };
-	static const XMVECTORF32 up = { 0.0f,1.0f,0.0f,0.0f };
-
-	XMStoreFloat4x4(&camera, XMMatrixInverse(nullptr, XMMatrixLookAtLH(eye, at, up)));
-
-	XMStoreFloat4x4(&matrixData.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
-
+#pragma region InitDebuggerObject
+	debugger.theMatrix = mesh.theMatrix;
 #pragma endregion
-
 
 
 	while (running)
 	{
 
-		XMStoreFloat4x4(&matrixData.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
+		XMStoreFloat4x4(&mesh.theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
+		XMStoreFloat4x4(&debugger.theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
 
 		//timer stuff
 		curr_time = std::chrono::high_resolution_clock::now();
@@ -161,9 +169,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		//////////////////////
 
 		graphicsStuff.setPipelinesStages(&pipeData);
-		graphicsStuff.draw(&pipeData, &matrixData, 
+		graphicsStuff.draw(&pipeData, &mesh.theMatrix,
 			sizeof(GraphicsSystem::matriceData), 
-			theData->verticeCount);
+			mesh.count);
+#pragma region updateDebuggerObject
+	
+		debugger.theObject = mesh.theObject;
+		debugger.count = mesh.count;
+#pragma endregion
+
+
 
 		if (rotatingCamera)
 		{
@@ -256,21 +271,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				break;
 			case WM_QUIT:
 				running = false;
-#pragma region pipeline cleanup
-				pipeData.constantBuffer->Release();
-				pipeData.depthStencilBuffer->Release();
-				pipeData.depthStencilState->Release();
-				pipeData.depthStencilView->Release();
-				pipeData.dev->Release();
-				pipeData.devcon->Release();
-				pipeData.inputLayout->Release();
-				pipeData.pixelShader->Release();
-				//	pipeDatate.rasterState->Release();
-				pipeData.renderTarget->Release();
-				pipeData.swapchain->Release();
-				pipeData.vertexBuffer->Release();
-				pipeData.vertexShader->Release();
-#pragma endregion
+				graphicsStuff.cleanUpPipeLine(&pipeData);
 
 				break;
 			default:

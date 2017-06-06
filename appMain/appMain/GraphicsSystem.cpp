@@ -258,6 +258,23 @@ void GraphicsSystem::draw(pipelineData * state, void* data, size_t size, int ver
 	state->swapchain->Present(1, 0);
 }
 
+void GraphicsSystem::cleanUpPipeLine(pipelineData * state)
+{
+	state->constantBuffer->Release();
+	state->depthStencilBuffer->Release();
+	state->depthStencilState->Release();
+	state->depthStencilView->Release();
+	state->dev->Release();
+	state->devcon->Release();
+	state->inputLayout->Release();
+	state->pixelShader->Release();
+	//	state->rasterState->Release();
+	state->renderTarget->Release();
+	state->swapchain->Release();
+	state->vertexBuffer->Release();
+	state->vertexShader->Release();
+}
+
 
 GraphicsSystem::GraphicsSystem()
 {
@@ -267,3 +284,4 @@ GraphicsSystem::GraphicsSystem()
 GraphicsSystem::~GraphicsSystem()
 {
 }
+
