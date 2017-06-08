@@ -1,10 +1,9 @@
 ﻿  appMain.cpp
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(130): warning C4018: '<': signed/unsigned mismatch
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(193): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(194): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(238): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(246): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(254): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(262): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(257): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(258): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(302): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(310): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(318): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(326): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.exe
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.pdb (Full PDB)

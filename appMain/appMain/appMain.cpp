@@ -8,13 +8,18 @@
 #include "GraphicsSystem.h"
 #include <chrono>
 
+//leak detection
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define MAX_LOADSTRING 100
 #define BACKBUFFER_WIDTH 500
 #define BACKBUFFER_HEIGHT 500
 
 //My Global Variables
-functionLibrary::FBXLoader theLoader("Battle Mage with Rig and textures.fbx");
-exportFile* theData = new exportFile;
+functionLibrary::FBXLoader* theLoader = new functionLibrary::FBXLoader("Idle.fbx");
+exportFile poseFile;
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
@@ -24,8 +29,8 @@ HWND hWnd;
 
 GraphicsSystem graphicsStuff;
 GraphicsSystem::pipelineData pipeData;
-GraphicsSystem::object mesh;
-GraphicsSystem::object pose;
+GraphicsSystem::object* mesh = new GraphicsSystem::object;
+GraphicsSystem::object* pose = new GraphicsSystem::object;
 
 //debug stuff
 GraphicsSystem::object debugger;
@@ -64,6 +69,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
 
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	// Initialize global strings
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -75,26 +81,37 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	{
 		return FALSE;
 	}
+	theLoader->importer();
+	theLoader->save();
+	theLoader->savePose(&poseFile);
 #ifndef NDEBUG
-	theLoader.importer();
-	theData = &theLoader.saver();
 	AllocConsole();
 
 	FILE* new_std_in_out;
 	freopen_s(&new_std_in_out, "CONOUT$", "w", stdout);
 	freopen_s(&new_std_in_out, "CONIN$", "r", stdin);
+#if 0
 
-//	std::cout << "Vertice Count is: " << theData->verticeCount << "\n";
-//	for (unsigned int i = 0; i < theData->verticeCount; i++)
-//	{
-//		std::cout << "Vertice: " << i << "\n";
-//		std::cout << "x: " << (theData->myData[i].position.x) << " "
-//			<< "y: " << (theData->myData[i].position.y) << " "
-//			<< "z: " << (theData->myData[i].position.z) << " "
-//			<< "w: " << (theData->myData[i].position.w) << "\n";
-//	}
-//
-//	std::cout << "End of vertices";
+
+	std::cout << "Vertice Count is: " << theLoader->theData.uniqueVerticeCount << "\n";
+	for (unsigned int i = 0; i < theLoader->theData.uniqueVerticeCount; i++)
+	{
+		std::cout << "Vertice: " << i << "\n";
+		std::cout << "x: " << (theLoader->theData.myData[i].position.x) << " "
+			<< "y: " << (theLoader->theData.myData[i].position.y) << " "
+			<< "z: " << (theLoader->theData.myData[i].position.z) << " "
+			<< "w: " << (theLoader->theData.myData[i].position.w) << "\n";
+	}
+	
+	std::cout << "End of vertices\n\n";
+	
+	std::cout << "Index Count is: " << theLoader->theData.indexCount << "\n";
+	for (unsigned int i = 0; i < theLoader->theData.indexCount; i++)
+	{
+		std::cout << "Index: " << i << " is: " << theLoader->theData.indicies[i] << "\n";
+	}
+	std::cout << "End of indices";
+#endif
 #endif
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_APPMAIN));
@@ -113,51 +130,91 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, 0.01f, 100);
 
-	XMStoreFloat4x4(&mesh.theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
 
 	static const XMVECTORF32 eye = { 0.0f, 0.7f, -1.5f, 0.0f };
 	static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f,0.0f };
-	static const XMVECTORF32 up = { 0.0f,1.0f,0.0f,0.0f };
+	static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 	XMStoreFloat4x4(&camera, XMMatrixInverse(nullptr, XMMatrixLookAtLH(eye, at, up)));
 
+	XMMATRIX perspective = graphicsStuff.perspectiveProjection(BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
 #pragma endregion
 
-#pragma region SetupDrawData
-	pipeData.topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-	XMMATRIX perspective = graphicsStuff.perspectiveProjection(BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
-	mesh.theObject = new GraphicsSystem::vertex[theData->verticeCount];
-	for (int i = 0; i < theData->verticeCount; i++)
+#pragma region SetupPoseDrawData
+	pose->topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+
+	pose->theObject = new GraphicsSystem::vertex[poseFile.uniqueVerticeCount];
+	pose->vertexCount = poseFile.uniqueVerticeCount;
+	for (unsigned int i = 0; i < poseFile.uniqueVerticeCount; i++)
+	{
+		GraphicsSystem::vertex temp;
+		temp.color = XMFLOAT4(Blue);
+
+		temp.position.x = poseFile.myData[i].position.x;
+		temp.position.y = poseFile.myData[i].position.y;
+		temp.position.z = poseFile.myData[i].position.z;
+		temp.position.w = poseFile.myData[i].position.w;
+
+		pose->theObject[i] = temp;
+	}
+
+	pose->indexCount = poseFile.indexCount;
+	pose->indices = new unsigned int[poseFile.indexCount];
+	for (unsigned int i = 0; i < poseFile.indexCount; i++)
+	{
+		pose->indices[i] = poseFile.indicies[i];
+
+	}
+
+	XMStoreFloat4x4(&pose->theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
+	XMStoreFloat4x4(&pose->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+#pragma endregion
+
+#pragma region SetupMeshDrawData
+	mesh->topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	
+	//move vertex Data over to object for drawing
+	mesh->theObject = new GraphicsSystem::vertex[theLoader->theData.uniqueVerticeCount];
+	mesh->vertexCount = theLoader->theData.uniqueVerticeCount;
+	for (unsigned int i = 0; i < theLoader->theData.uniqueVerticeCount; i++)
 	{
 		GraphicsSystem::vertex temp;
 		temp.color = XMFLOAT4(Red);
 
-		temp.position.x = theData->myData[i].position.x;
-		temp.position.y = theData->myData[i].position.y;
-		temp.position.z = theData->myData[i].position.z;
-		temp.position.w = theData->myData[i].position.w;
+		temp.position.x = theLoader->theData.myData[i].position.x;
+		temp.position.y = theLoader->theData.myData[i].position.y;
+		temp.position.z = theLoader->theData.myData[i].position.z;
+		temp.position.w = theLoader->theData.myData[i].position.w;
 
 
-		mesh.theObject[i] = temp;
+		mesh->theObject[i] = temp;
 	}
-	mesh.count = theData->verticeCount;
 
-	XMStoreFloat4x4(&mesh.theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+	//move index data over to object to draw
+	mesh->indexCount = theLoader->theData.indexCount;
+	mesh->indices = new unsigned int[mesh->indexCount];
+	for (unsigned int i = 0; i < mesh->indexCount; i++)
+	{
+		mesh->indices[i] = theLoader->theData.indicies[i];
+	}
 
-	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT, mesh.theObject, theData->verticeCount);
+	delete theLoader;
+
+
+	//initialize drawing stuff in pipeline
+	XMStoreFloat4x4(&mesh->theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
+	XMStoreFloat4x4(&mesh->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 #pragma endregion
 
-#pragma region InitDebuggerObject
-	debugger.theMatrix = mesh.theMatrix;
-#pragma endregion
+
+	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
+
+	graphicsStuff.basicSetUpBuffer(&pipeData, mesh);
+	graphicsStuff.basicSetUpBuffer(&pipeData, pose);
 
 
 	while (running)
 	{
-
-		XMStoreFloat4x4(&mesh.theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
-		XMStoreFloat4x4(&debugger.theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
-
 		//timer stuff
 		curr_time = std::chrono::high_resolution_clock::now();
 
@@ -168,16 +225,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		accum_time += delta_time;
 		//////////////////////
 
-		graphicsStuff.setPipelinesStages(&pipeData);
-		graphicsStuff.draw(&pipeData, &mesh.theMatrix,
-			sizeof(GraphicsSystem::matriceData), 
-			mesh.count);
-#pragma region updateDebuggerObject
-	
-		debugger.theObject = mesh.theObject;
-		debugger.count = mesh.count;
-#pragma endregion
+		XMStoreFloat4x4(&mesh->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
+		XMStoreFloat4x4(&pose->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
 
+		graphicsStuff.setGeneralPipelineStages(&pipeData);
+
+		//Mesh draw 
+		graphicsStuff.setObjectPipelineStages(&pipeData, mesh);
+
+		graphicsStuff.drawIndex(&pipeData, mesh);
+
+		//Pose draw 
+		graphicsStuff.setObjectPipelineStages(&pipeData, pose);
+
+		graphicsStuff.drawInOrder(&pipeData, pose);
+
+
+		pipeData.swapchain->Present(1, 0);
 
 
 		if (rotatingCamera)

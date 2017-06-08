@@ -1,9 +1,11 @@
 #pragma once
+
 class GraphicsSystem
 {
 public:
 	struct pipelineData
 	{
+		IDXGISwapChain* swapchain = NULL;
 		ID3D11Device* dev = NULL;
 		ID3D11DeviceContext *devcon = NULL;
 		D3D11_VIEWPORT viewport;
@@ -15,12 +17,8 @@ public:
 		ID3D11DepthStencilState* depthStencilState = NULL;
 		ID3D11DepthStencilView* depthStencilView;
 		ID3D11RasterizerState* rasterState = NULL;
-		D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		UINT stride;
 		UINT offset;
-		ID3D11Buffer* vertexBuffer = NULL;
-		ID3D11Buffer* constantBuffer = NULL;
-		IDXGISwapChain* swapchain = NULL;
 	};
 	struct vertex
 	{
@@ -37,16 +35,26 @@ public:
 	{
 		vertex* theObject;
 		matriceData theMatrix;
-		unsigned int count;
+		unsigned int* indices;
+		unsigned int vertexCount;
+		unsigned int indexCount;
+
+		D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+		ID3D11Buffer* vertexBuffer = NULL;
+		ID3D11Buffer* constantBuffer = NULL;
+		ID3D11Buffer* indexBuffer = NULL;
 	};
 
 	XMMATRIX perspectiveProjection(float width, float height);
 
-	void initViewport(pipelineData* state, unsigned int width, unsigned int height);
+	void initViewport(pipelineData* state, float width, float height);
 
-	void setPipelinesStages(pipelineData* state);
+	void setGeneralPipelineStages(pipelineData* state);
 
-	void basicSetUpBuffer(pipelineData* state, vertex* points, unsigned int size);
+	void setObjectPipelineStages(pipelineData* state, object* theObject);
+
+	void basicSetUpBuffer(pipelineData* state, object* theObject);
 
 	void initDepthBuffer(pipelineData* state, unsigned int width, unsigned int height);
 
@@ -58,12 +66,15 @@ public:
 
 	void initShaders(pipelineData* state);
 
-	void initOverall(pipelineData* state, HWND window, unsigned int width,
-		unsigned int height, vertex* points, unsigned int size);
+	void initOverall(pipelineData* state, HWND window, unsigned int width, unsigned int height);
 
-	void draw(pipelineData* state, void* data, size_t size, int vertexCount);
+	void drawIndex(pipelineData* state, object* theObject);
+
+	void drawInOrder(pipelineData* state, object* theObject);
 
 	void cleanUpPipeLine(pipelineData* state);
+
+	void cleanUpObject(object* theObject);
 
 	GraphicsSystem();
 	~GraphicsSystem();

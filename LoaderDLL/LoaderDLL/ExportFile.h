@@ -5,7 +5,11 @@
 class exportFile
 {
 public:
-
+	~exportFile() 
+	{
+		delete[] myData;
+		delete[] indicies;
+	}
 	struct FLOAT4
 	{
 		//Based off of directx XMFLOAT4
@@ -42,7 +46,31 @@ public:
 	struct vertex
 	{
 		FLOAT4 position;
+
+		bool operator==(const vertex a)
+		{
+			bool returnVal = true;
+			if (position.x != a.position.x) 
+			{ 
+				returnVal = false;
+			}
+			else if (position.y != a.position.y) 
+			{ 
+				returnVal = false;
+			}
+			else if (position.z != a.position.z) 
+			{ 
+				returnVal = false;
+			}
+			else if (position.w != a.position.w) 
+			{ 
+				returnVal = false;
+			}
+			return returnVal;
+		}
 	};
-	unsigned int verticeCount = 0;
+	unsigned int uniqueVerticeCount = 0;
+	unsigned int indexCount = 0;
 	vertex* myData;
+	unsigned int* indicies;
 };

@@ -29,7 +29,6 @@
 #include <wrl/client.h>
 #include <wincodec.h>
 #include <DirectXColors.h>
-#include <DirectXMath.h>
 #include <memory>
 #include <concrt.h>
 #include <D3D11_1.h>

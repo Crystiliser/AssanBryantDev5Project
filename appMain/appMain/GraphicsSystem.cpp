@@ -20,7 +20,7 @@ XMMATRIX GraphicsSystem::perspectiveProjection(float width, float height)
 	return perspectiveMatrix;
 }
 
-void GraphicsSystem::initViewport(pipelineData * state, unsigned int width, unsigned int height)
+void GraphicsSystem::initViewport(pipelineData * state, float width, float height)
 {
 	ZeroMemory(&state->viewport, sizeof(D3D11_VIEWPORT));
 
@@ -32,21 +32,13 @@ void GraphicsSystem::initViewport(pipelineData * state, unsigned int width, unsi
 	state->viewport.Height = height;
 }
 
-void GraphicsSystem::setPipelinesStages(pipelineData * state)
+void GraphicsSystem::setGeneralPipelineStages(pipelineData * state)
 {
 	state->devcon->OMSetDepthStencilState(state->depthStencilState, 0);
 
 	state->devcon->OMSetRenderTargets(1, &state->renderTarget, state->depthStencilView);
 
-	state->devcon->ClearRenderTargetView(state->renderTarget, Black);
-
-	state->devcon->ClearDepthStencilView(state->depthStencilView, D3D11_CLEAR_DEPTH, 1, 0);
-
-	state->devcon->IASetVertexBuffers(0, 1, &state->vertexBuffer, &state->stride, &state->offset);
-
 	state->devcon->IASetInputLayout(state->inputLayout);
-
-	state->devcon->IASetPrimitiveTopology(state->topology);
 
 	state->devcon->VSSetShader(state->vertexShader, 0, 0);
 
@@ -54,32 +46,58 @@ void GraphicsSystem::setPipelinesStages(pipelineData * state)
 
 	state->devcon->RSSetViewports(1, &state->viewport);
 
-	state->devcon->VSSetConstantBuffers(0, 1, &state->constantBuffer);
+	state->devcon->RSSetState(state->rasterState);
 
-	state->devcon->PSSetConstantBuffers(0, 1, &state->constantBuffer);
+	state->devcon->ClearRenderTargetView(state->renderTarget, Black);
+
+	state->devcon->ClearDepthStencilView(state->depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1, 0);
+
 }
 
-void GraphicsSystem::basicSetUpBuffer(pipelineData * state, vertex* points, unsigned int size)
+void GraphicsSystem::setObjectPipelineStages(pipelineData* state, object* theObject)
 {
+	state->devcon->IASetVertexBuffers(0, 1, &theObject->vertexBuffer, &state->stride, &state->offset);
 
+	state->devcon->IASetIndexBuffer(theObject->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	state->devcon->VSSetConstantBuffers(0, 1, &theObject->constantBuffer);
+
+	state->devcon->PSSetConstantBuffers(0, 1, &theObject->constantBuffer);
+
+	state->devcon->IASetPrimitiveTopology(theObject->topology);
+}
+
+void GraphicsSystem::basicSetUpBuffer(pipelineData * state, object* theObject)
+{
+	//vertex buffer setup
 	D3D11_BUFFER_DESC bufferDesc;
 	ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
 	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	bufferDesc.ByteWidth = sizeof(vertex) * size;
+	bufferDesc.ByteWidth = sizeof(vertex) * theObject->vertexCount;
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.CPUAccessFlags = 0;
 	bufferDesc.MiscFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA initial;
-	initial.pSysMem = points;
+	D3D11_SUBRESOURCE_DATA initial = { 0 };
+	initial.pSysMem = theObject->theObject;
 	initial.SysMemPitch = 0;
 	initial.SysMemSlicePitch = 0;
 
 	state->stride = sizeof(vertex);
 	state->offset = 0;
 
-	state->dev->CreateBuffer(&bufferDesc, &initial, &state->vertexBuffer);
+	state->dev->CreateBuffer(&bufferDesc, &initial, &theObject->vertexBuffer);
+	
+	//index buffer setup
+	D3D11_SUBRESOURCE_DATA indexBufferData = { 0 };
+	indexBufferData.pSysMem = theObject->indices;
+	indexBufferData.SysMemPitch = 0;
+	indexBufferData.SysMemSlicePitch = 0;
+	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(unsigned int) * theObject->indexCount, D3D11_BIND_INDEX_BUFFER);
+	state->dev->CreateBuffer(&indexBufferDesc, &indexBufferData, &theObject->indexBuffer);
 
+
+	//constant buffer setup
 	D3D11_BUFFER_DESC cBufferDesc;
 	ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
 	cBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -88,7 +106,7 @@ void GraphicsSystem::basicSetUpBuffer(pipelineData * state, vertex* points, unsi
 	cBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	cBufferDesc.MiscFlags = 0;
 
-	state->dev->CreateBuffer(&cBufferDesc, NULL, &state->constantBuffer);
+	state->dev->CreateBuffer(&cBufferDesc, NULL, &theObject->constantBuffer);
 }
 
 void GraphicsSystem::initDepthBuffer(pipelineData * state, unsigned int width, unsigned int height)
@@ -152,20 +170,19 @@ void GraphicsSystem::initDepthView(pipelineData * state)
 
 void GraphicsSystem::initRasterizerState(pipelineData * state)
 {
-	ID3D11RasterizerState * g_pRasterState;
+	D3D11_RASTERIZER_DESC rasterDesc;
 
-	D3D11_RASTERIZER_DESC rasterizerState;
-	rasterizerState.FillMode = D3D11_FILL_SOLID;
-	rasterizerState.CullMode = D3D11_CULL_FRONT;
-	rasterizerState.FrontCounterClockwise = true;
-	rasterizerState.DepthBias = false;
-	rasterizerState.DepthBiasClamp = 0;
-	rasterizerState.SlopeScaledDepthBias = 0;
-	rasterizerState.DepthClipEnable = true;
-	rasterizerState.ScissorEnable = true;
-	rasterizerState.MultisampleEnable = false;
-	rasterizerState.AntialiasedLineEnable = false;
-	state->dev->CreateRasterizerState(&rasterizerState, &g_pRasterState);
+	rasterDesc.AntialiasedLineEnable = false;
+	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.DepthBias = 0;
+	rasterDesc.DepthBiasClamp = 0.0f;
+	rasterDesc.DepthClipEnable = true;
+	rasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+	rasterDesc.FrontCounterClockwise = true;
+	rasterDesc.MultisampleEnable = false;
+	rasterDesc.ScissorEnable = false;
+	rasterDesc.SlopeScaledDepthBias = 0.0f;
+	state->dev->CreateRasterizerState(&rasterDesc, &state->rasterState);
 
 }
 
@@ -187,17 +204,19 @@ void GraphicsSystem::initShaders(pipelineData * state)
 }
 
 void GraphicsSystem::initOverall(pipelineData* state, HWND window, 
-	unsigned int width, unsigned int height, vertex* points, unsigned int size)
+	unsigned int width, unsigned int height)
 {
 	DXGI_SWAP_CHAIN_DESC scd;
 
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
-	scd.BufferCount = 2;
+	scd.BufferCount = 3;
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = window;
 	scd.SampleDesc.Count = 1;
+	scd.SampleDesc.Quality = 0;
+	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.Windowed = true;
 
 #ifdef _DEBUG
@@ -206,7 +225,7 @@ void GraphicsSystem::initOverall(pipelineData* state, HWND window,
 		NULL,
 		D3D11_CREATE_DEVICE_DEBUG,
 		NULL,
-		NULL,
+		0,
 		D3D11_SDK_VERSION,
 		&scd,
 		&state->swapchain,
@@ -234,33 +253,41 @@ void GraphicsSystem::initOverall(pipelineData* state, HWND window,
 
 	state->dev->CreateRenderTargetView(pBackBuffer, NULL, &state->renderTarget);
 	pBackBuffer->Release();
-	initViewport(state, width, height);
-	initDepthBuffer(state, width, height);
-	initDepthState(state);
-	initDepthView(state);
-	basicSetUpBuffer(state, points, size);
-	initShaders(state);
 
+	initDepthBuffer(state, width, height);
+	initDepthView(state);
+	initDepthState(state);
+	initRasterizerState(state);
+	initViewport(state, width, height);
+	initShaders(state);
 }
 
-void GraphicsSystem::draw(pipelineData * state, void* data, size_t size, int vertexCount)
+void GraphicsSystem::drawIndex(pipelineData * state, object* theObject)
 {
 
-	D3D11_MAPPED_SUBRESOURCE gridSource;
-	ZeroMemory(&gridSource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	state->devcon->Map(state->constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &gridSource);
-	memcpy(gridSource.pData, data, size);
-	state->devcon->Unmap(state->constantBuffer, 0);
-	//state->devcon->UpdateSubresource(state->constantBuffer, 0, NULL, gridSource.pData, 500, 0);
+	D3D11_MAPPED_SUBRESOURCE resource;
+	ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	state->devcon->Map(theObject->constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	memcpy(resource.pData, &theObject->theMatrix, sizeof(matriceData));
+	state->devcon->Unmap(theObject->constantBuffer, 0);
 
-	state->devcon->Draw(vertexCount, 0);
+	state->devcon->DrawIndexed(theObject->indexCount,0,0);
+}
 
-	state->swapchain->Present(1, 0);
+void GraphicsSystem::drawInOrder(pipelineData* state, object* theObject)
+{
+
+	D3D11_MAPPED_SUBRESOURCE resource;
+	ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	state->devcon->Map(theObject->constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	memcpy(resource.pData, &theObject->theMatrix, sizeof(matriceData));
+	state->devcon->Unmap(theObject->constantBuffer, 0);
+
+	state->devcon->Draw(theObject->vertexCount, 0);
 }
 
 void GraphicsSystem::cleanUpPipeLine(pipelineData * state)
 {
-	state->constantBuffer->Release();
 	state->depthStencilBuffer->Release();
 	state->depthStencilState->Release();
 	state->depthStencilView->Release();
@@ -268,11 +295,17 @@ void GraphicsSystem::cleanUpPipeLine(pipelineData * state)
 	state->devcon->Release();
 	state->inputLayout->Release();
 	state->pixelShader->Release();
-	//	state->rasterState->Release();
+	state->rasterState->Release();
 	state->renderTarget->Release();
 	state->swapchain->Release();
-	state->vertexBuffer->Release();
 	state->vertexShader->Release();
+}
+
+void GraphicsSystem::cleanUpObject(object * theObject)
+{
+	theObject->constantBuffer->Release();
+	theObject->vertexBuffer->Release();
+	theObject->indexBuffer->Release();
 }
 
 

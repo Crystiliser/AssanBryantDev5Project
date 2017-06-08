@@ -38,6 +38,7 @@ namespace functionLibrary
 
 	FBXLoader::~FBXLoader()
 	{
+		theScene->Destroy();
 		theManager->Destroy();
 	}
 
@@ -53,7 +54,7 @@ namespace functionLibrary
 		theImporter->Destroy();
 	}
 
-	exportFile FBXLoader::savePose(exportFile temp)
+	void FBXLoader::savePose(exportFile* returnVal)
 	{
 		unsigned int poseCount = theScene->GetPoseCount();
 
@@ -63,27 +64,24 @@ namespace functionLibrary
 			if (object->IsBindPose())
 			{
 				unsigned int nodeCount = object->GetCount();
-				for (unsigned int i = 0; i < nodeCount; i++)
+				for (unsigned int j = 0; j < nodeCount; j++)
 				{
-					FbxNode* node = object->GetNode(i);
+					FbxNode* node = object->GetNode(j);
 					FbxSkeleton* skeleton = node->GetSkeleton();
 					if (skeleton != nullptr)
 					{
 						if (skeleton->IsSkeletonRoot())
 						{
-							struct myFbxJoint { FbxNode* node; int parentIndex; };
-							std::vector<myFbxJoint>;
-							
+							goThoughNodeArray(skeleton->GetNode(), -1);
+							changeNodeArrayToVertexArray(nodeArray, returnVal);
 						}
 					}
 				}
 			}
-			
 		}
-		return temp;
 	}
 
-	exportFile FBXLoader::saver()
+	void FBXLoader::save()
 	{
 		unsigned int geometryCount = theScene->GetGeometryCount();
 
@@ -93,24 +91,246 @@ namespace functionLibrary
 			FbxNodeAttribute::EType type = object->GetAttributeType();
 			if (type == FbxNodeAttribute::eMesh)
 			{
-				//theData.verticeCount = ((static_cast<FbxMesh*>(object))->GetPolygonCount()) * TRIANGLE_VERTEX_COUNT;
-				theData.verticeCount = object->GetControlPointsCount();
-				theData.myData = new exportFile::vertex[theData.verticeCount];
+#if 0
+
+
+				const int polygonCount = ((FbxMesh*)object)->GetPolygonCount();
+
+				const int polygonVertexCount = object->GetControlPointsCount();
+
+				theData.myData = new exportFile::vertex[polygonVertexCount];
+				theData.indicies = new unsigned int[polygonCount * 3];
+				const unsigned int indicCount = polygonCount * 3;
 				
 				const FbxVector4* controlPoints = object->GetControlPoints();
 				FbxVector4 currentVertex;
-				for (unsigned int j = 0; j < theData.verticeCount; j++)
+				for (unsigned int j = 0; j < indicCount; j++)
 				{
-
 					currentVertex = controlPoints[j];
-					theData.myData[j].position.x = static_cast<float>(currentVertex[0]);
-					theData.myData[j].position.y = static_cast<float>(currentVertex[1]);
-					theData.myData[j].position.z = static_cast<float>(currentVertex[2]);
-					theData.myData[j].position.w = 1;
-				
+					exportFile::vertex temp;
+					temp.position.x = static_cast<float>(currentVertex[0]);
+					temp.position.y = static_cast<float>(currentVertex[1]);
+					temp.position.z = static_cast<float>(currentVertex[2]);
+					temp.position.w = 1;
+
+					bool unique = true;
+					int index;
+					for (unsigned int k = 0; k < theData.uniqueVerticeCount; k++)
+					{
+						if (theData.myData[k] == temp)
+						{
+							unique = false;
+							index = k;
+							break;
+						}
+					}
+					if (unique)
+					{
+						index = theData.uniqueVerticeCount;
+						theData.myData[theData.uniqueVerticeCount] = temp;
+						theData.uniqueVerticeCount++;
+					}
+					theData.indicies[theData.indexCount] = index;
+					theData.indexCount++;
+
 				}
+				break;
+
+#endif 
+
+				if (!object->GetNode())
+					break;
+
+				const int lPolygonCount = ((FbxMesh*)object)->GetPolygonCount();
+
+				// Count the polygon count of each material
+				FbxLayerElementArrayTemplate<int>* lMaterialIndice = NULL;
+				FbxGeometryElement::EMappingMode lMaterialMappingMode = FbxGeometryElement::eNone;
+				if (object->GetElementMaterial())
+				{
+					lMaterialIndice = &object->GetElementMaterial()->GetIndexArray();
+					lMaterialMappingMode = object->GetElementMaterial()->GetMappingMode();
+					if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon)
+					{
+						FBX_ASSERT(lMaterialIndice->GetCount() == lPolygonCount);
+						if (lMaterialIndice->GetCount() == lPolygonCount)
+						{
+							// Count the faces of each material
+							for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex)
+							{
+								const int lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
+								if (mSubMeshes.GetCount() < lMaterialIndex + 1)
+								{
+									mSubMeshes.Resize(lMaterialIndex + 1);
+								}
+								if (mSubMeshes[lMaterialIndex] == NULL)
+								{
+									mSubMeshes[lMaterialIndex] = new SubMesh;
+								}
+								mSubMeshes[lMaterialIndex]->TriangleCount += 1;
+							}
+
+							// Make sure we have no "holes" (NULL) in the mSubMeshes table. This can happen
+							// if, in the loop above, we resized the mSubMeshes by more than one slot.
+							for (int i = 0; i < mSubMeshes.GetCount(); i++)
+							{
+								if (mSubMeshes[i] == NULL)
+									mSubMeshes[i] = new SubMesh;
+							}
+
+							// Record the offset (how many vertex)
+							const int lMaterialCount = mSubMeshes.GetCount();
+							int lOffset = 0;
+							for (int lIndex = 0; lIndex < lMaterialCount; ++lIndex)
+							{
+								mSubMeshes[lIndex]->IndexOffset = lOffset;
+								lOffset += mSubMeshes[lIndex]->TriangleCount * 3;
+								// This will be used as counter in the following procedures, reset to zero
+								mSubMeshes[lIndex]->TriangleCount = 0;
+							}
+							FBX_ASSERT(lOffset == lPolygonCount * 3);
+						}
+					}
+				}
+
+				// All faces will use the same material.
+				if (mSubMeshes.GetCount() == 0)
+				{
+					mSubMeshes.Resize(1);
+					mSubMeshes[0] = new SubMesh();
+				}
+
+
+				// Allocate the array memory, by control point or by polygon vertex.
+				int lPolygonVertexCount = object->GetControlPointsCount();
+				if (!mAllByControlPoint)
+				{
+					lPolygonVertexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
+				}
+				theData.myData = new exportFile::vertex[lPolygonVertexCount];
+				theData.uniqueVerticeCount = lPolygonVertexCount;
+				theData.indicies = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
+				theData.indexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
+			
+
+				// Populate the array with vertex attribute, if by control point.
+				const FbxVector4 * lControlPoints = object->GetControlPoints();
+				FbxVector4 lCurrentVertex;
+				if (mAllByControlPoint)
+				{
+					for (int lIndex = 0; lIndex < lPolygonVertexCount; ++lIndex)
+					{
+						// Save the vertex position.
+						lCurrentVertex = lControlPoints[lIndex];
+						theData.myData[lIndex].position.x = static_cast<float>(lCurrentVertex[0]);
+						theData.myData[lIndex].position.y = static_cast<float>(lCurrentVertex[1]);
+						theData.myData[lIndex].position.z = static_cast<float>(lCurrentVertex[2]);
+						theData.myData[lIndex].position.w = 1;
+
+					}
+
+				}
+
+				int lVertexCount = 0;
+				for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex)
+				{
+					// The material for current face.
+					int lMaterialIndex = 0;
+					if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon)
+					{
+						lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
+					}
+
+					// Where should I save the vertex attribute index, according to the material
+					const int lIndexOffset = mSubMeshes[lMaterialIndex]->IndexOffset +
+						mSubMeshes[lMaterialIndex]->TriangleCount * 3;
+					for (int lVerticeIndex = 0; lVerticeIndex < TRIANGLE_VERTEX_COUNT; ++lVerticeIndex)
+					{
+						const int lControlPointIndex = ((FbxMesh*)object)->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
+
+						if (mAllByControlPoint)
+						{
+							theData.indicies[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lControlPointIndex);
+						}
+						// Populate the array with vertex attribute, if by polygon vertex.
+						else
+						{
+							theData.indicies[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lVertexCount);
+
+							lCurrentVertex = lControlPoints[lControlPointIndex];
+							theData.myData[lVertexCount].position.x = static_cast<float>(lCurrentVertex[0]);
+							theData.myData[lVertexCount].position.y = static_cast<float>(lCurrentVertex[1]);
+							theData.myData[lVertexCount].position.z = static_cast<float>(lCurrentVertex[2]);
+							theData.myData[lVertexCount].position.w = 1;
+						}
+						++lVertexCount;
+					}
+					mSubMeshes[lMaterialIndex]->TriangleCount += 1;
+				}
+
+
+				break;
 			}
 		}
-		return theData;
+	}
+
+
+	void FBXLoader::goThoughNodeArray(FbxNode* node, int parentIndex)
+	{
+#if 0
+
+
+#else
+		myFbxJoint newNode;
+		newNode.node = node;
+		newNode.parentIndex = parentIndex;
+		nodeArray.push_back(newNode);
+		nodeCount++;
+
+		unsigned int childCount = node->GetChildCount();
+		if (childCount > 0)
+		{
+			for (unsigned int i = 0; i < childCount; i++)
+			{
+				FbxNode* childNode = node->GetChild(i);
+
+				goThoughNodeArray(childNode, nodeCount);
+
+				newNode.node = node;
+				newNode.parentIndex = parentIndex;
+				nodeArray.push_back(newNode);
+				nodeCount++;
+			}
+	}
+#endif
+
+	}
+
+	void FBXLoader::changeNodeArrayToVertexArray(std::vector<myFbxJoint> theArray, exportFile* newFile)
+	{
+		newFile->myData = new exportFile::vertex[theArray.size()];
+		newFile->indicies = new unsigned int[theArray.size()];
+		newFile->indexCount = theArray.size();
+		newFile->uniqueVerticeCount = theArray.size();
+		for (unsigned int i = 0; i < theArray.size(); i++)
+		{
+			
+			FbxAMatrix tempMatrix;
+			tempMatrix = theArray[i].node->EvaluateGlobalTransform();
+
+			exportFile::vertex fin;
+			FbxVector4 translation = tempMatrix.GetT();
+			//FbxVector4 rotation = tempMatrix.GetR();
+			//FbxVector4 scale = tempMatrix.GetS();
+			FbxVector4 mul = translation/* * rotation * scale*/;
+
+			fin.position.x = translation[0];
+			fin.position.y = translation[1];
+			fin.position.z = translation[2];
+			fin.position.w = 1;
+
+			newFile->myData[i] = fin;
+			newFile->indicies[i] = theArray[i].parentIndex;
+		}
 	}
 }
