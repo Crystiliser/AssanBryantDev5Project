@@ -88,7 +88,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>LOADERDEFINE</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x86\debug;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x64\debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -106,7 +106,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>LOADERDEFINE</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x86\debug;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x64\debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -126,7 +126,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>LOADERDEFINE</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x86\debug;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x64\debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -148,7 +148,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>LOADERDEFINE</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\LoaderDLL\LoaderDLL;E:\Programs\AutoDesk\FBX SDK\2017.0.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x86\debug;D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x64\debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>

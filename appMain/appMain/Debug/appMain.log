@@ -1,6 +1,9 @@
-﻿  appMain.cpp
+﻿  stdafx.cpp
+  GraphicsSystem.cpp
+  appMain.cpp
 c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(160): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(179): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(198): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  Generating Code...
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.exe
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.pdb (Full PDB)
