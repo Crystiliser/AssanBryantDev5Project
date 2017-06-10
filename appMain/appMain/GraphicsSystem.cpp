@@ -20,7 +20,7 @@ XMMATRIX GraphicsSystem::perspectiveProjection(float width, float height)
 	return perspectiveMatrix;
 }
 
-void GraphicsSystem::initViewport(pipelineData * state, float width, float height)
+void GraphicsSystem::initViewport(pipelineData * state, unsigned int width, unsigned int height)
 {
 	ZeroMemory(&state->viewport, sizeof(D3D11_VIEWPORT));
 
@@ -28,8 +28,8 @@ void GraphicsSystem::initViewport(pipelineData * state, float width, float heigh
 	state->viewport.TopLeftY = 0;
 	state->viewport.MaxDepth = 1;
 	state->viewport.MinDepth = 0;
-	state->viewport.Width = width;
-	state->viewport.Height = height;
+	state->viewport.Width = (float)width;
+	state->viewport.Height = (float)height;
 }
 
 void GraphicsSystem::setGeneralPipelineStages(pipelineData * state)
@@ -67,7 +67,7 @@ void GraphicsSystem::setObjectPipelineStages(pipelineData* state, object* theObj
 	state->devcon->IASetPrimitiveTopology(theObject->topology);
 }
 
-void GraphicsSystem::basicSetUpBuffer(pipelineData * state, object* theObject)
+void GraphicsSystem::basicSetUpIndexBuffer(pipelineData * state, object* theObject)
 {
 	//vertex buffer setup
 	D3D11_BUFFER_DESC bufferDesc;
@@ -87,7 +87,7 @@ void GraphicsSystem::basicSetUpBuffer(pipelineData * state, object* theObject)
 	state->offset = 0;
 
 	state->dev->CreateBuffer(&bufferDesc, &initial, &theObject->vertexBuffer);
-	
+
 	//index buffer setup
 	D3D11_SUBRESOURCE_DATA indexBufferData = { 0 };
 	indexBufferData.pSysMem = theObject->indices;
@@ -96,6 +96,39 @@ void GraphicsSystem::basicSetUpBuffer(pipelineData * state, object* theObject)
 	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(unsigned int) * theObject->indexCount, D3D11_BIND_INDEX_BUFFER);
 	state->dev->CreateBuffer(&indexBufferDesc, &indexBufferData, &theObject->indexBuffer);
 
+
+	//constant buffer setup
+	D3D11_BUFFER_DESC cBufferDesc;
+	ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+	cBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	cBufferDesc.ByteWidth = sizeof(matriceData);
+	cBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cBufferDesc.MiscFlags = 0;
+
+	state->dev->CreateBuffer(&cBufferDesc, NULL, &theObject->constantBuffer);
+}
+
+void GraphicsSystem::basicSetUpInOrderBuffer(pipelineData * state, object* theObject)
+{
+	//vertex buffer setup
+	D3D11_BUFFER_DESC bufferDesc;
+	ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	bufferDesc.ByteWidth = sizeof(vertex) * theObject->vertexCount;
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.CPUAccessFlags = 0;
+	bufferDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initial = { 0 };
+	initial.pSysMem = theObject->theObject;
+	initial.SysMemPitch = 0;
+	initial.SysMemSlicePitch = 0;
+
+	state->stride = sizeof(vertex);
+	state->offset = 0;
+
+	state->dev->CreateBuffer(&bufferDesc, &initial, &theObject->vertexBuffer);
 
 	//constant buffer setup
 	D3D11_BUFFER_DESC cBufferDesc;

@@ -22,13 +22,14 @@ public:
 	};
 	struct vertex
 	{
-		XMFLOAT4 position;
+		XMFLOAT4 position = XMFLOAT4(0,0,0,0);
 		XMFLOAT4 color;
 	};
 	struct matriceData
 	{
 		XMFLOAT4X4 view;
 		XMFLOAT4X4 projection;
+		XMFLOAT4X4 model;
 	};
 
 	struct object
@@ -48,13 +49,15 @@ public:
 
 	XMMATRIX perspectiveProjection(float width, float height);
 
-	void initViewport(pipelineData* state, float width, float height);
+	void initViewport(pipelineData* state, unsigned int width, unsigned int height);
 
 	void setGeneralPipelineStages(pipelineData* state);
 
 	void setObjectPipelineStages(pipelineData* state, object* theObject);
 
-	void basicSetUpBuffer(pipelineData* state, object* theObject);
+	void basicSetUpIndexBuffer(pipelineData* state, object* theObject);
+
+	void basicSetUpInOrderBuffer(pipelineData * state, object* theObject);
 
 	void initDepthBuffer(pipelineData* state, unsigned int width, unsigned int height);
 

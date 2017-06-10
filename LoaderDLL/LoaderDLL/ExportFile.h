@@ -5,10 +5,16 @@
 class exportFile
 {
 public:
-	~exportFile() 
+	~exportFile()
 	{
-		delete[] myData;
-		delete[] indicies;
+		if (myData != nullptr)
+		{
+			delete[] myData;
+		}
+		if (indicies != nullptr)
+		{
+			delete[] indicies;
+		}
 	}
 	struct FLOAT4
 	{

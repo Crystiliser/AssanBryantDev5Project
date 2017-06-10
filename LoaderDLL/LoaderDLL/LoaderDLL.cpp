@@ -2,27 +2,6 @@
 //
 
 #include "stdafx.h"
-#if 0
-#include "TestHeader.h"
-
-namespace MathLibrary
-{
-	double Functions::Add(double a, double b)
-	{
-		return a + b;
-	}
-
-	double Functions::Multiply(double a, double b)
-	{
-		return a * b;
-	}
-
-	double Functions::AddMultiply(double a, double b)
-	{
-		return a + (a * b);
-	}
-}
-#endif
 #include "Loader.h"
 
 namespace functionLibrary
@@ -320,17 +299,14 @@ namespace functionLibrary
 
 			exportFile::vertex fin;
 			FbxVector4 translation = tempMatrix.GetT();
-			//FbxVector4 rotation = tempMatrix.GetR();
-			//FbxVector4 scale = tempMatrix.GetS();
-			FbxVector4 mul = translation/* * rotation * scale*/;
+			FbxVector4 mul = translation;
 
-			fin.position.x = translation[0];
-			fin.position.y = translation[1];
-			fin.position.z = translation[2];
+			fin.position.x = static_cast<float>(translation[0]);
+			fin.position.y = static_cast<float>(translation[1]);
+			fin.position.z = static_cast<float>(translation[2]);
 			fin.position.w = 1;
 
 			newFile->myData[i] = fin;
-			newFile->indicies[i] = theArray[i].parentIndex;
 		}
 	}
 }

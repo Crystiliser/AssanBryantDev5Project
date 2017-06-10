@@ -1,21 +1,3 @@
 ﻿  LoaderDLL.cpp
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(31): warning C4273: 'functionLibrary::FBXLoader::FBXLoader': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(71): note: see previous definition of '{ctor}'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(40): warning C4273: 'functionLibrary::FBXLoader::~FBXLoader': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(72): note: see previous definition of '{dtor}'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(46): warning C4273: 'functionLibrary::FBXLoader::importer': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(73): note: see previous definition of 'importer'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(58): warning C4273: 'functionLibrary::FBXLoader::savePose': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(74): note: see previous definition of 'savePose'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(85): warning C4273: 'functionLibrary::FBXLoader::save': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(75): note: see previous definition of 'save'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(279): warning C4273: 'functionLibrary::FBXLoader::goThoughNodeArray': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(44): note: see previous definition of 'goThoughNodeArray'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(310): warning C4273: 'functionLibrary::FBXLoader::changeNodeArrayToVertexArray': inconsistent dll linkage
-  c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loader.h(46): note: see previous definition of 'changeNodeArrayToVertexArray'
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(327): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(328): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
-c:\users\assan bryant\documents\github\assanbryantdev5project\loaderdll\loaderdll\loaderdll.cpp(329): warning C4244: '=': conversion from 'fbxsdk::FbxDouble' to 'float', possible loss of data
-cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
   LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.dll
   LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.pdb (Full PDB)
