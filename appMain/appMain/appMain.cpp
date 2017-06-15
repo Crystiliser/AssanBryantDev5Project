@@ -19,13 +19,11 @@ functionLibrary::FBXLoader* theMageLoader = new functionLibrary::FBXLoader("Idle
 exportFile* mageMeshFile = new exportFile;
 exportFile* magePoseFile = new exportFile;
 GraphicsSystem::object* mageMesh = new GraphicsSystem::object;
-GraphicsSystem::object* magePose = new GraphicsSystem::object;
 
 functionLibrary::FBXLoader* theTeddyLoader = new functionLibrary::FBXLoader("Teddy_Run.fbx");
 exportFile* teddyMeshFile = new exportFile;
 exportFile* teddyPoseFile = new exportFile;
 GraphicsSystem::object* teddyMesh = new GraphicsSystem::object;
-GraphicsSystem::object* teddyPose = new GraphicsSystem::object;
 
 GraphicsSystem::object* debugObject = new GraphicsSystem::object;
 unsigned int debugVertCount = 0;
@@ -95,20 +93,8 @@ void setupMeshData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRI
 	XMStoreFloat4x4(&theMesh->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 }
 
-void setupPoseData(exportFile* theFile, GraphicsSystem::object* thePose,  XMMATRIX* perspectiveMatrix, XMVECTOR eye, XMVECTOR at, XMVECTOR up)
+void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRIX* perspectiveMatrix, XMVECTOR eye, XMVECTOR at, XMVECTOR up)
 {
-	thePose->topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-
-	if (theFile->uniqueVerticeCount % 2 != 0)
-	{
-		thePose->theObject = new GraphicsSystem::vertex[theFile->uniqueVerticeCount + (theFile->uniqueVerticeCount * 6) + 1];
-		thePose->vertexCount = theFile->uniqueVerticeCount + (theFile->uniqueVerticeCount * 6) + 1;
-	}
-	else
-	{
-		thePose->theObject = new GraphicsSystem::vertex[theFile->uniqueVerticeCount + (theFile->uniqueVerticeCount * 6)];
-		thePose->vertexCount = theFile->uniqueVerticeCount + (theFile->uniqueVerticeCount * 6);
-	}
 
 	for (unsigned int i = 0; i < theFile->uniqueVerticeCount; i++)
 	{
@@ -120,88 +106,77 @@ void setupPoseData(exportFile* theFile, GraphicsSystem::object* thePose,  XMMATR
 		temp.position.z = theFile->myData[i].position.z;
 		temp.position.w = theFile->myData[i].position.w;
 
-		thePose->theObject[i] = temp;
-		//debugVerts.push_back(temp);
+		theMesh->bones.push_back(temp);
 	}
-
-	XMStoreFloat4x4(&thePose->theMatrix.projection, XMMatrixTranspose(*perspectiveMatrix));
-	XMStoreFloat4x4(&thePose->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 
 
 #if 1
 	unsigned int endPoint = theFile->uniqueVerticeCount;
-	unsigned int isOdd = 0;
 	if (theFile->uniqueVerticeCount % 2 != 0)
 	{
 		GraphicsSystem::vertex bufferVert;
-		bufferVert.position = thePose->theObject[theFile->uniqueVerticeCount - 1 + debugVertCount].position;
+		bufferVert.position = theMesh->bones[theFile->uniqueVerticeCount - 1].position;
 		bufferVert.color = XMFLOAT4(White);
-		thePose->theObject[theFile->uniqueVerticeCount] = bufferVert;
+		theMesh->bones.push_back(bufferVert);
 		endPoint++;
-		isOdd++;
 	}
 
-	for (unsigned int i = 0 /*+ debugVertCount*/; i < (endPoint - 1)/* + debugVertCount*/; i++)
+	for (unsigned int i = 0; i < (endPoint - 1); i++)
 	{
 
 		GraphicsSystem::vertex xAxis1;
 		xAxis1.color = XMFLOAT4(Red);
-		xAxis1.position.x = thePose->theObject[i].position.x;
-		xAxis1.position.y = thePose->theObject[i].position.y;
-		xAxis1.position.z = thePose->theObject[i].position.z;
-		xAxis1.position.w = thePose->theObject[i].position.w;
-		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + isOdd] = xAxis1;
-		//debugVerts.push_back(xAxis1);
+		xAxis1.position.x = theMesh->bones[i].position.x;
+		xAxis1.position.y = theMesh->bones[i].position.y;
+		xAxis1.position.z = theMesh->bones[i].position.z;
+		xAxis1.position.w = theMesh->bones[i].position.w;
+		theMesh->bones.push_back(xAxis1);
 
 		GraphicsSystem::vertex xAxis2;
 		xAxis2.color = XMFLOAT4(Red);
-		xAxis2.position.x = thePose->theObject[i].position.x + 0.1f;
-		xAxis2.position.y = thePose->theObject[i].position.y;
-		xAxis2.position.z = thePose->theObject[i].position.z;
-		xAxis2.position.w = thePose->theObject[i].position.w;
-		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 1 + isOdd] = xAxis2;
-		//debugVerts.push_back(xAxis2);
+		xAxis2.position.x = theMesh->bones[i].position.x + 0.1f;
+		xAxis2.position.y = theMesh->bones[i].position.y;
+		xAxis2.position.z = theMesh->bones[i].position.z;
+		xAxis2.position.w = theMesh->bones[i].position.w;
+		theMesh->bones.push_back(xAxis2);
 
 		GraphicsSystem::vertex yAxis1;
 		yAxis1.color = XMFLOAT4(Green);
-		yAxis1.position.x = thePose->theObject[i].position.x;
-		yAxis1.position.y = thePose->theObject[i].position.y;
-		yAxis1.position.z = thePose->theObject[i].position.z;
-		yAxis1.position.w = thePose->theObject[i].position.w;
-		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 2 + isOdd] = yAxis1;
-		//debugVerts.push_back(yAxis1);
+		yAxis1.position.x = theMesh->bones[i].position.x;
+		yAxis1.position.y = theMesh->bones[i].position.y;
+		yAxis1.position.z = theMesh->bones[i].position.z;
+		yAxis1.position.w = theMesh->bones[i].position.w;
+		theMesh->bones.push_back(yAxis1);
 
 		GraphicsSystem::vertex yAxis2;
 		yAxis2.color = XMFLOAT4(Green);
-		yAxis2.position.x = thePose->theObject[i].position.x;
-		yAxis2.position.y = thePose->theObject[i].position.y + 0.1f;
-		yAxis2.position.z = thePose->theObject[i].position.z;
-		yAxis2.position.w = thePose->theObject[i].position.w;
-		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 3 + isOdd] = yAxis2;
-		//debugVerts.push_back(yAxis2);
+		yAxis2.position.x = theMesh->bones[i].position.x;
+		yAxis2.position.y = theMesh->bones[i].position.y + 0.1f;
+		yAxis2.position.z = theMesh->bones[i].position.z;
+		yAxis2.position.w = theMesh->bones[i].position.w;
+		theMesh->bones.push_back(yAxis2);
 
 		GraphicsSystem::vertex zAxis1;
 		zAxis1.color = XMFLOAT4(Blue);
-		zAxis1.position.x = thePose->theObject[i].position.x;
-		zAxis1.position.y = thePose->theObject[i].position.y;
-		zAxis1.position.z = thePose->theObject[i].position.z;
-		zAxis1.position.w = thePose->theObject[i].position.w;
-		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 4 + isOdd] = zAxis1;
-		//debugVerts.push_back(zAxis1);
+		zAxis1.position.x = theMesh->bones[i].position.x;
+		zAxis1.position.y = theMesh->bones[i].position.y;
+		zAxis1.position.z = theMesh->bones[i].position.z;
+		zAxis1.position.w = theMesh->bones[i].position.w;
+		theMesh->bones.push_back(zAxis1);
 
 		GraphicsSystem::vertex zAxis2;
 		zAxis2.color = XMFLOAT4(Blue);
-		zAxis2.position.x = thePose->theObject[i].position.x;
-		zAxis2.position.y = thePose->theObject[i].position.y;
-		zAxis2.position.z = thePose->theObject[i].position.z + 0.1f;
-		zAxis2.position.w = thePose->theObject[i].position.w;
-		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 5 + isOdd] = zAxis2;
-		//debugVerts.push_back(zAxis2);
+		zAxis2.position.x = theMesh->bones[i].position.x;
+		zAxis2.position.y = theMesh->bones[i].position.y;
+		zAxis2.position.z = theMesh->bones[i].position.z + 0.1f;
+		zAxis2.position.w = theMesh->bones[i].position.w;
+		theMesh->bones.push_back(zAxis2);
 	}
-	//debugVertCount += debugVerts.size() - 1;
+	debugVertCount += theMesh->bones.size() - 1;
 #endif
 
 }
+
 
 
 
@@ -235,7 +210,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theMageLoader->importer();
 	theMageLoader->save(mageMeshFile);
 	theMageLoader->savePose(magePoseFile);
-	//theMageLoader->saveAnimationStack(magePoseFile);
+	theMageLoader->saveAnimationStack(magePoseFile);
 	delete theMageLoader;
 
 
@@ -243,7 +218,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theTeddyLoader->importer();
 	theTeddyLoader->save(teddyMeshFile);
 	theTeddyLoader->savePose(teddyPoseFile);
-	//theTeddyLoader->saveAnimationStack(teddyPoseFile);
+	theTeddyLoader->saveAnimationStack(teddyPoseFile);
 	delete theTeddyLoader;
 
 #ifndef NDEBUG
@@ -301,41 +276,58 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 
-	setupMeshData(teddyMeshFile, teddyMesh, &perspectiveMatrix, eye, at, up);
-	delete teddyMeshFile;
-	setupPoseData(teddyPoseFile, teddyPose, &perspectiveMatrix, eye, at, up);
-	//delete teddyPoseFile;
 
+	//setup object data
 	setupMeshData(mageMeshFile, mageMesh, &perspectiveMatrix, eye, at, up);
 	delete mageMeshFile;
-	setupPoseData(magePoseFile, magePose, &perspectiveMatrix, eye, at, up);
+	setupDebugPoseData(magePoseFile, mageMesh, &perspectiveMatrix, eye, at, up);
 	delete magePoseFile;
 
+	setupMeshData(teddyMeshFile, teddyMesh, &perspectiveMatrix, eye, at, up);
+	delete teddyMeshFile;
+	setupDebugPoseData(teddyPoseFile, teddyMesh, &perspectiveMatrix, eye, at, up);
+	delete teddyPoseFile;
 
-	//debugObject->theObject = &debugVerts[0];
-	//debugObject->vertexCount = debugVerts.size();
 
-	//XMStoreFloat4x4(&debugObject->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation))
-	
 
 	//Init model offsets, size, ect
 	//Mage
-	XMStoreFloat4x4(&mageMesh->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation(-10.0f, 0.0f, 0.0f)));
-	XMStoreFloat4x4(&magePose->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation(-10.0f, 0.0f, 0.0f)));
+	mageMesh->translateObject(-10.0f, 0.0f, 0.0f ,1.0f ,1.0f ,1.0f);
 
 	//Teddy
-	XMStoreFloat4x4(&teddyMesh->theMatrix.model, XMMatrixTranspose(XMMatrixMultiply(XMMatrixTranslation(0.0f, 0.0f, 0.0f), XMMatrixScaling(0.2f,0.2f,0.2f))));
-	XMStoreFloat4x4(&teddyPose->theMatrix.model, XMMatrixTranspose(XMMatrixMultiply(XMMatrixTranslation(0.0f, 0.0f, 0.0f), XMMatrixScaling(0.2f,0.2f,0.2f))));
+	teddyMesh->translateObject(0.0f, 0.0f, 0.0f, 0.2f, 0.2f, 0.2f);
+
+
+	//Init debug render
+	for (unsigned int i = 0; i < mageMesh->bones.size(); i++)
+	{
+		debugVerts.push_back(mageMesh->bones[i]);
+	}
+	for (unsigned int i = 0; i < teddyMesh->bones.size(); i++)
+	{
+		debugVerts.push_back(teddyMesh->bones[i]);
+	}
+
+
+	debugObject->vertexCount = debugVertCount;
+	debugObject->theObject = &debugVerts[0];
+
+	debugObject->topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+
+	XMStoreFloat4x4(&debugObject->theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
+	XMStoreFloat4x4(&debugObject->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+	XMStoreFloat4x4(&debugObject->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation(0.0f, 0.0f, 0.0f)));
 
 
 
+	//finish inits for buffers
 	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
 
 	graphicsStuff.basicSetUpIndexBuffer(&pipeData, mageMesh);
-	graphicsStuff.basicSetUpInOrderBuffer(&pipeData, magePose);
 
 	graphicsStuff.basicSetUpIndexBuffer(&pipeData, teddyMesh);
-	graphicsStuff.basicSetUpInOrderBuffer(&pipeData, teddyPose);
+
+	graphicsStuff.basicSetUpInOrderBuffer(&pipeData, debugObject);
 
 
 	while (running)
@@ -351,10 +343,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		//////////////////////
 
 		XMStoreFloat4x4(&mageMesh->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
-		XMStoreFloat4x4(&magePose->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
 
 		XMStoreFloat4x4(&teddyMesh->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
-		XMStoreFloat4x4(&teddyPose->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
+
+		XMStoreFloat4x4(&debugObject->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
 
 
 
@@ -364,17 +356,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		graphicsStuff.setObjectPipelineStages(&pipeData, mageMesh);
 		graphicsStuff.drawIndex(&pipeData, mageMesh);
 
-		//magePose draw 
-		graphicsStuff.setObjectPipelineStages(&pipeData, magePose);
-		graphicsStuff.drawInOrder(&pipeData, magePose);
-
 		//teddyMesh draw
 		graphicsStuff.setObjectPipelineStages(&pipeData, teddyMesh);
 		graphicsStuff.drawIndex(&pipeData, teddyMesh);
 
-		//teddyPose draw
-		graphicsStuff.setObjectPipelineStages(&pipeData, teddyPose);
-		graphicsStuff.drawInOrder(&pipeData, teddyPose);
+		//debugobject draw
+		graphicsStuff.setObjectPipelineStages(&pipeData, debugObject);
+		graphicsStuff.drawInOrder(&pipeData, debugObject);
 
 
 		pipeData.swapchain->Present(1, 0);
@@ -471,6 +459,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				break;
 			case WM_QUIT:
 				running = false;
+				graphicsStuff.cleanUpObject(mageMesh);
+				graphicsStuff.cleanUpObject(teddyMesh);
 				graphicsStuff.cleanUpPipeLine(&pipeData);
 
 				break;

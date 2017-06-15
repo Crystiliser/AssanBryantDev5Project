@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 class GraphicsSystem
 {
@@ -20,11 +21,13 @@ public:
 		UINT stride;
 		UINT offset;
 	};
+
 	struct vertex
 	{
 		XMFLOAT4 position = XMFLOAT4(0,0,0,0);
 		XMFLOAT4 color;
 	};
+
 	struct matriceData
 	{
 		XMFLOAT4X4 view;
@@ -35,16 +38,32 @@ public:
 	struct object
 	{
 		vertex* theObject;
+		std::vector<vertex> bones;
 		matriceData theMatrix;
 		unsigned int* indices;
 		unsigned int vertexCount;
-		unsigned int indexCount;
+		unsigned int indexCount = 0;
 
 		D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 		ID3D11Buffer* vertexBuffer = NULL;
 		ID3D11Buffer* constantBuffer = NULL;
 		ID3D11Buffer* indexBuffer = NULL;
+
+		void translateObject(float xTranslate, float yTranslate, float zTranslate, float xScale, float yScale, float zScale)
+		{
+			XMMATRIX transformMat = XMMatrixMultiply( XMMatrixTranslation(xTranslate, yTranslate, zTranslate), XMMatrixScaling(xScale, yScale, zScale));
+
+			XMStoreFloat4x4(&theMatrix.model, XMMatrixTranspose(transformMat));
+
+
+			for (unsigned int i = 0; i < bones.size(); i++)
+			{
+				XMVECTOR bonePos = XMLoadFloat4(&bones[i].position);
+				XMVECTOR fin = XMVector3Transform(bonePos, transformMat);
+				XMStoreFloat4(&bones[i].position, fin);
+			}
+		}
 	};
 
 	XMMATRIX perspectiveProjection(float width, float height);

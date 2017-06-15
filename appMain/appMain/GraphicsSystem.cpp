@@ -337,8 +337,13 @@ void GraphicsSystem::cleanUpPipeLine(pipelineData * state)
 void GraphicsSystem::cleanUpObject(object * theObject)
 {
 	theObject->constantBuffer->Release();
+	delete[] theObject->theObject;
 	theObject->vertexBuffer->Release();
-	theObject->indexBuffer->Release();
+	if (theObject->indexCount > 0)
+	{
+		theObject->indexBuffer->Release();
+		delete[] theObject->indices;
+	}
 }
 
 
