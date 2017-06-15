@@ -35,6 +35,8 @@ namespace functionLibrary
 
 	void FBXLoader::savePose(exportFile* returnVal)
 	{
+		returnVal->indexed = false;
+
 		unsigned int poseCount = theScene->GetPoseCount();
 
 		for (unsigned int i = 0; i < poseCount; i++)
@@ -53,6 +55,7 @@ namespace functionLibrary
 						{
 							goThoughNodeArray(skeleton->GetNode(), -1);
 							changeNodeArrayToVertexArray(nodeArray, returnVal);
+							break;
 						}
 					}
 				}
@@ -60,8 +63,10 @@ namespace functionLibrary
 		}
 	}
 
-	void FBXLoader::save()
+	void FBXLoader::save(exportFile* theData)
 	{
+		theData->indexed = true;
+
 		unsigned int geometryCount = theScene->GetGeometryCount();
 
 		for (unsigned int i = 0; i < geometryCount; i++)
@@ -70,53 +75,6 @@ namespace functionLibrary
 			FbxNodeAttribute::EType type = object->GetAttributeType();
 			if (type == FbxNodeAttribute::eMesh)
 			{
-#if 0
-
-
-				const int polygonCount = ((FbxMesh*)object)->GetPolygonCount();
-
-				const int polygonVertexCount = object->GetControlPointsCount();
-
-				theData.myData = new exportFile::vertex[polygonVertexCount];
-				theData.indicies = new unsigned int[polygonCount * 3];
-				const unsigned int indicCount = polygonCount * 3;
-				
-				const FbxVector4* controlPoints = object->GetControlPoints();
-				FbxVector4 currentVertex;
-				for (unsigned int j = 0; j < indicCount; j++)
-				{
-					currentVertex = controlPoints[j];
-					exportFile::vertex temp;
-					temp.position.x = static_cast<float>(currentVertex[0]);
-					temp.position.y = static_cast<float>(currentVertex[1]);
-					temp.position.z = static_cast<float>(currentVertex[2]);
-					temp.position.w = 1;
-
-					bool unique = true;
-					int index;
-					for (unsigned int k = 0; k < theData.uniqueVerticeCount; k++)
-					{
-						if (theData.myData[k] == temp)
-						{
-							unique = false;
-							index = k;
-							break;
-						}
-					}
-					if (unique)
-					{
-						index = theData.uniqueVerticeCount;
-						theData.myData[theData.uniqueVerticeCount] = temp;
-						theData.uniqueVerticeCount++;
-					}
-					theData.indicies[theData.indexCount] = index;
-					theData.indexCount++;
-
-				}
-				break;
-
-#endif 
-
 				if (!object->GetNode())
 					break;
 
@@ -186,10 +144,10 @@ namespace functionLibrary
 				{
 					lPolygonVertexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
 				}
-				theData.myData = new exportFile::vertex[lPolygonVertexCount];
-				theData.uniqueVerticeCount = lPolygonVertexCount;
-				theData.indicies = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
-				theData.indexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
+				theData->myData = new exportFile::vertex[lPolygonVertexCount];
+				theData->uniqueVerticeCount = lPolygonVertexCount;
+				theData->indicies = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
+				theData->indexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
 			
 
 				// Populate the array with vertex attribute, if by control point.
@@ -201,10 +159,10 @@ namespace functionLibrary
 					{
 						// Save the vertex position.
 						lCurrentVertex = lControlPoints[lIndex];
-						theData.myData[lIndex].position.x = static_cast<float>(lCurrentVertex[0]);
-						theData.myData[lIndex].position.y = static_cast<float>(lCurrentVertex[1]);
-						theData.myData[lIndex].position.z = static_cast<float>(lCurrentVertex[2]);
-						theData.myData[lIndex].position.w = 1;
+						theData->myData[lIndex].position.x = static_cast<float>(lCurrentVertex[0]);
+						theData->myData[lIndex].position.y = static_cast<float>(lCurrentVertex[1]);
+						theData->myData[lIndex].position.z = static_cast<float>(lCurrentVertex[2]);
+						theData->myData[lIndex].position.w = 1;
 
 					}
 
@@ -229,18 +187,18 @@ namespace functionLibrary
 
 						if (mAllByControlPoint)
 						{
-							theData.indicies[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lControlPointIndex);
+							theData->indicies[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lControlPointIndex);
 						}
 						// Populate the array with vertex attribute, if by polygon vertex.
 						else
 						{
-							theData.indicies[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lVertexCount);
+							theData->indicies[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lVertexCount);
 
 							lCurrentVertex = lControlPoints[lControlPointIndex];
-							theData.myData[lVertexCount].position.x = static_cast<float>(lCurrentVertex[0]);
-							theData.myData[lVertexCount].position.y = static_cast<float>(lCurrentVertex[1]);
-							theData.myData[lVertexCount].position.z = static_cast<float>(lCurrentVertex[2]);
-							theData.myData[lVertexCount].position.w = 1;
+							theData->myData[lVertexCount].position.x = static_cast<float>(lCurrentVertex[0]);
+							theData->myData[lVertexCount].position.y = static_cast<float>(lCurrentVertex[1]);
+							theData->myData[lVertexCount].position.z = static_cast<float>(lCurrentVertex[2]);
+							theData->myData[lVertexCount].position.w = 1;
 						}
 						++lVertexCount;
 					}
@@ -253,13 +211,8 @@ namespace functionLibrary
 		}
 	}
 
-
 	void FBXLoader::goThoughNodeArray(FbxNode* node, int parentIndex)
 	{
-#if 0
-
-
-#else
 		myFbxJoint newNode;
 		newNode.node = node;
 		newNode.parentIndex = parentIndex;
@@ -281,15 +234,12 @@ namespace functionLibrary
 				nodeCount++;
 			}
 	}
-#endif
 
 	}
 
 	void FBXLoader::changeNodeArrayToVertexArray(std::vector<myFbxJoint> theArray, exportFile* newFile)
 	{
 		newFile->myData = new exportFile::vertex[theArray.size()];
-		newFile->indicies = new unsigned int[theArray.size()];
-		newFile->indexCount = theArray.size();
 		newFile->uniqueVerticeCount = theArray.size();
 		for (unsigned int i = 0; i < theArray.size(); i++)
 		{
@@ -307,6 +257,70 @@ namespace functionLibrary
 			fin.position.w = 1;
 
 			newFile->myData[i] = fin;
+
+			FbxNode* child = theArray[i].node->GetParent();
+			for (unsigned int j = 0; j < theArray.size(); j++)
+			{
+				if (child == theArray[j].node)
+				{
+					theArray[i].parentIndex = j;
+				}
+			}
+		}
+	}
+
+	void FBXLoader::saveAnimationStack(exportFile* theData)
+	{
+		theData->animated = true;
+
+		FbxAnimStack* theAnimStack = theScene->GetCurrentAnimationStack();
+
+		FbxTimeSpan theTimeSpan = theAnimStack->GetLocalTimeSpan();
+
+		FbxTime theTime = theTimeSpan.GetDuration();
+
+		FbxLongLong frameCount = theTime.GetFrameCount(FbxTime::EMode::eFrames24);
+
+
+		for (FbxLongLong i = 1; i < frameCount; i++)
+		{
+			exportFile::keyframe currentFrame;
+			FbxTime newTime;
+			newTime.SetFrame(frameCount, FbxTime::EMode::eFrames24);
+			currentFrame.time = static_cast<double>(newTime.Get());
+
+			for (unsigned int j = 0; j < nodeArray.size(); j++)
+			{
+				FbxMatrix newMatrix;
+				newMatrix = nodeArray[j].node->EvaluateGlobalTransform(newTime);
+				FbxVector4 firstRow = newMatrix.GetRow(0);
+				FbxVector4 secondRow = newMatrix.GetRow(1);
+				FbxVector4 thirdRow = newMatrix.GetRow(2);
+				FbxVector4 fourthRow = newMatrix.GetRow(3);
+				float* matrixArray = new float[16];
+				matrixArray[0] = static_cast<float>(firstRow[0]);
+				matrixArray[1] = static_cast<float>(firstRow[1]);
+				matrixArray[2] = static_cast<float>(firstRow[2]);
+				matrixArray[3] = static_cast<float>(firstRow[3]);
+
+				matrixArray[4] = static_cast<float>(secondRow[0]);
+				matrixArray[5] = static_cast<float>(secondRow[1]);
+				matrixArray[6] = static_cast<float>(secondRow[2]);
+				matrixArray[7] = static_cast<float>(secondRow[3]);
+
+				matrixArray[8] = static_cast<float>(thirdRow[0]);
+				matrixArray[9] = static_cast<float>(thirdRow[1]);
+				matrixArray[10] = static_cast<float>(thirdRow[2]);
+				matrixArray[11] = static_cast<float>(thirdRow[3]);
+
+				matrixArray[12] = static_cast<float>(fourthRow[0]);
+				matrixArray[13] = static_cast<float>(fourthRow[1]);
+				matrixArray[14] = static_cast<float>(fourthRow[2]);
+				matrixArray[15] = static_cast<float>(fourthRow[3]);
+
+				currentFrame.joints.push_back(matrixArray);
+			}
+			theData->theAnimation.frames.push_back(currentFrame);
 		}
 	}
 }

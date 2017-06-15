@@ -28,24 +28,18 @@ namespace functionLibrary
 		bool mAllByControlPoint = true;
 
 
-#if 0
-		struct myFbxJoint { FbxNode* node; int parentIndex; int myIndex; };
-		std::vector<myFbxJoint> nodeArray;
-		int nodeCount = 0;
-
-		LOADERAPI void goThoughNodeArray(FbxNode* node, int parentIndex);
-
-		LOADERAPI void changeNodeArrayToVertexArray(std::vector<myFbxJoint> theArray, exportFile* newFile);
-#else
 		struct myFbxJoint { FbxNode* node; int parentIndex; };
 		std::vector<myFbxJoint> nodeArray;
 		int nodeCount = 0;
 
 		LOADERAPI void goThoughNodeArray(FbxNode* node, int parentIndex);
-
 		LOADERAPI void changeNodeArrayToVertexArray(std::vector<myFbxJoint> theArray, exportFile* newFile);
 
-#endif
+
+		LOADERAPI void saveAnimationStack(exportFile* theData);
+
+
+
 
 		const int TRIANGLE_VERTEX_COUNT = 3;
 
@@ -65,13 +59,12 @@ namespace functionLibrary
 		FbxImporter* theImporter;
 		FbxNodeAttribute::EType type;
 		char* iFileName;
-		exportFile theData;
 
 		//functions
 		LOADERAPI FBXLoader(char* newFileName);
 		LOADERAPI ~FBXLoader();
 		LOADERAPI void importer();
 		LOADERAPI void savePose(exportFile* temp);
-		LOADERAPI void save();   
+		LOADERAPI void save(exportFile* theData);
 	};
 }

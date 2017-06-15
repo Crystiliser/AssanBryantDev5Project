@@ -1,20 +1,29 @@
 #pragma once
 
 #include "fbxsdk.h"
+#include <vector>
 
 class exportFile
 {
 public:
 	~exportFile()
 	{
-		if (myData != nullptr)
-		{
-			delete[] myData;
-		}
-		if (indicies != nullptr)
+		delete[] myData;
+		if (indexed)
 		{
 			delete[] indicies;
 		}
+		if (animated)
+		{
+			for (unsigned int i = 1; i < theAnimation.frames.size() - 1; i++)
+			{
+				for (unsigned int j = 0; j < theAnimation.frames[i].joints.size() - 1; j++)
+				{
+					delete[] theAnimation.frames[i].joints[j];
+				}
+			}
+		}
+ 		int x = 0;
 	}
 	struct FLOAT4
 	{
@@ -75,8 +84,17 @@ public:
 			return returnVal;
 		}
 	};
+
+	bool indexed = false;
+	bool animated = false;
+
 	unsigned int uniqueVerticeCount = 0;
 	unsigned int indexCount = 0;
 	vertex* myData;
 	unsigned int* indicies;
+
+
+	struct keyframe { double time; std::vector<float*> joints; };
+	struct animClip { double duration; std::vector<keyframe> frames; };
+	animClip theAnimation;
 };

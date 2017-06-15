@@ -9,10 +9,6 @@
 #include <chrono>
 #include <vector>
 
-//leak detection
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
 
 #define MAX_LOADSTRING 100
 #define BACKBUFFER_WIDTH 500
@@ -20,11 +16,13 @@
 
 //My Global Variables
 functionLibrary::FBXLoader* theMageLoader = new functionLibrary::FBXLoader("Idle.fbx");
+exportFile* mageMeshFile = new exportFile;
 exportFile* magePoseFile = new exportFile;
 GraphicsSystem::object* mageMesh = new GraphicsSystem::object;
 GraphicsSystem::object* magePose = new GraphicsSystem::object;
 
-functionLibrary::FBXLoader* theTeddyLoader = new functionLibrary::FBXLoader("Teddy_Idle.fbx");
+functionLibrary::FBXLoader* theTeddyLoader = new functionLibrary::FBXLoader("Teddy_Run.fbx");
+exportFile* teddyMeshFile = new exportFile;
 exportFile* teddyPoseFile = new exportFile;
 GraphicsSystem::object* teddyMesh = new GraphicsSystem::object;
 GraphicsSystem::object* teddyPose = new GraphicsSystem::object;
@@ -63,33 +61,33 @@ float rotSpd = 0.5f;
 
 //Functions
 
-void setupMeshData(functionLibrary::FBXLoader* theLoader, GraphicsSystem::object* theMesh, XMMATRIX* perspectiveMatrix, XMVECTOR eye, XMVECTOR at, XMVECTOR up)
+void setupMeshData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRIX* perspectiveMatrix, XMVECTOR eye, XMVECTOR at, XMVECTOR up)
 {
 	theMesh->topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	//move vertex Data over to object for drawing
-	theMesh->theObject = new GraphicsSystem::vertex[theLoader->theData.uniqueVerticeCount];
-	theMesh->vertexCount = theLoader->theData.uniqueVerticeCount;
-	for (unsigned int i = 0; i < theLoader->theData.uniqueVerticeCount; i++)
+	theMesh->theObject = new GraphicsSystem::vertex[theFile->uniqueVerticeCount];
+	theMesh->vertexCount = theFile->uniqueVerticeCount;
+	for (unsigned int i = 0; i < theFile->uniqueVerticeCount; i++)
 	{
 		GraphicsSystem::vertex temp;
 		temp.color = XMFLOAT4(Purple);
 
-		temp.position.x = theLoader->theData.myData[i].position.x;
-		temp.position.y = theLoader->theData.myData[i].position.y;
-		temp.position.z = theLoader->theData.myData[i].position.z;
-		temp.position.w = theLoader->theData.myData[i].position.w;
+		temp.position.x = theFile->myData[i].position.x;
+		temp.position.y = theFile->myData[i].position.y;
+		temp.position.z = theFile->myData[i].position.z;
+		temp.position.w = theFile->myData[i].position.w;
 
 
 		theMesh->theObject[i] = temp;
 	}
 
 	//move index data over to object to draw
-	theMesh->indexCount = theLoader->theData.indexCount;
+	theMesh->indexCount = theFile->indexCount;
 	theMesh->indices = new unsigned int[theMesh->indexCount];
 	for (unsigned int i = 0; i < theMesh->indexCount; i++)
 	{
-		theMesh->indices[i] = theLoader->theData.indicies[i];
+		theMesh->indices[i] = theFile->indicies[i];
 	}
 
 	//initialize drawing stuff in pipeline
@@ -157,7 +155,7 @@ void setupPoseData(exportFile* theFile, GraphicsSystem::object* thePose,  XMMATR
 
 		GraphicsSystem::vertex xAxis2;
 		xAxis2.color = XMFLOAT4(Red);
-		xAxis2.position.x = thePose->theObject[i].position.x + 0.1;
+		xAxis2.position.x = thePose->theObject[i].position.x + 0.1f;
 		xAxis2.position.y = thePose->theObject[i].position.y;
 		xAxis2.position.z = thePose->theObject[i].position.z;
 		xAxis2.position.w = thePose->theObject[i].position.w;
@@ -176,7 +174,7 @@ void setupPoseData(exportFile* theFile, GraphicsSystem::object* thePose,  XMMATR
 		GraphicsSystem::vertex yAxis2;
 		yAxis2.color = XMFLOAT4(Green);
 		yAxis2.position.x = thePose->theObject[i].position.x;
-		yAxis2.position.y = thePose->theObject[i].position.y + 0.1;
+		yAxis2.position.y = thePose->theObject[i].position.y + 0.1f;
 		yAxis2.position.z = thePose->theObject[i].position.z;
 		yAxis2.position.w = thePose->theObject[i].position.w;
 		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 3 + isOdd] = yAxis2;
@@ -195,7 +193,7 @@ void setupPoseData(exportFile* theFile, GraphicsSystem::object* thePose,  XMMATR
 		zAxis2.color = XMFLOAT4(Blue);
 		zAxis2.position.x = thePose->theObject[i].position.x;
 		zAxis2.position.y = thePose->theObject[i].position.y;
-		zAxis2.position.z = thePose->theObject[i].position.z + 0.1;
+		zAxis2.position.z = thePose->theObject[i].position.z + 0.1f;
 		zAxis2.position.w = thePose->theObject[i].position.w;
 		thePose->theObject[(i * 6) + theFile->uniqueVerticeCount + 5 + isOdd] = zAxis2;
 		//debugVerts.push_back(zAxis2);
@@ -235,14 +233,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	//import and save mage stuff
 	theMageLoader->importer();
-	theMageLoader->save();
+	theMageLoader->save(mageMeshFile);
 	theMageLoader->savePose(magePoseFile);
+	//theMageLoader->saveAnimationStack(magePoseFile);
+	delete theMageLoader;
+
 
 	//import and save Teddy stuff
 	theTeddyLoader->importer();
-	theTeddyLoader->save();
+	theTeddyLoader->save(teddyMeshFile);
 	theTeddyLoader->savePose(teddyPoseFile);
-
+	//theTeddyLoader->saveAnimationStack(teddyPoseFile);
+	delete theTeddyLoader;
 
 #ifndef NDEBUG
 	AllocConsole();
@@ -299,15 +301,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 
-	setupMeshData(theMageLoader, mageMesh, &perspectiveMatrix, eye, at, up);
-	delete theMageLoader;
-	setupPoseData(magePoseFile, magePose, &perspectiveMatrix, eye, at, up);
-	delete[] magePoseFile->myData;
-
-	setupMeshData(theTeddyLoader, teddyMesh, &perspectiveMatrix, eye, at, up);
-	delete theTeddyLoader;
+	setupMeshData(teddyMeshFile, teddyMesh, &perspectiveMatrix, eye, at, up);
+	delete teddyMeshFile;
 	setupPoseData(teddyPoseFile, teddyPose, &perspectiveMatrix, eye, at, up);
-	delete[] teddyPoseFile->myData;
+	//delete teddyPoseFile;
+
+	setupMeshData(mageMeshFile, mageMesh, &perspectiveMatrix, eye, at, up);
+	delete mageMeshFile;
+	setupPoseData(magePoseFile, magePose, &perspectiveMatrix, eye, at, up);
+	delete magePoseFile;
+
 
 	//debugObject->theObject = &debugVerts[0];
 	//debugObject->vertexCount = debugVerts.size();
