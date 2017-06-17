@@ -61,6 +61,8 @@ public:
 	struct vertex
 	{
 		FLOAT4 position;
+		FLOAT4 normal;
+		FLOAT4 UV;
 
 		bool operator==(const vertex a)
 		{

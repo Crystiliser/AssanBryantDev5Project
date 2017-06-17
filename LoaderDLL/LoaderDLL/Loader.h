@@ -23,8 +23,8 @@ namespace functionLibrary
 			int TriangleCount;
 		};
 		FbxArray<SubMesh*> mSubMeshes;
-		bool mHasNormal = false;
-		bool mHasUV = false;
+		bool mHasNormal = true;
+		bool mHasUV = true;
 		bool mAllByControlPoint = true;
 
 
@@ -42,13 +42,6 @@ namespace functionLibrary
 
 
 		const int TRIANGLE_VERTEX_COUNT = 3;
-
-		// Four floats for every position.
-		const int VERTEX_STRIDE = 4;
-		// Three floats for every normal.
-		const int NORMAL_STRIDE = 3;
-		// Two floats for every UV.
-		const int UV_STRIDE = 2;
 
 		//variables
 		FbxManager* theManager;

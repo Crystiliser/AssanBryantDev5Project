@@ -45,6 +45,8 @@ XMFLOAT4X4 camera;
 bool rotatingCamera = false;
 XMFLOAT2 point = { 0,0 };
 XMFLOAT2 prePoint = { 0,0 };
+float moveSpeed = 5.0f;
+float rotSpd = 0.5f;
 
 //timer stuff
 
@@ -54,8 +56,11 @@ time_point_t last_time;
 time_point_t curr_time;
 double accum_time{ 0.0 };
 
-float moveSpeed = 5.0f;
-float rotSpd = 0.5f;
+//animatino stuff
+bool playingAnim = false;
+bool playingTween = false;
+double timeMultiplier = 100;
+
 
 //Functions
 
@@ -93,8 +98,9 @@ void setupMeshData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRI
 	XMStoreFloat4x4(&theMesh->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 }
 
-void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRIX* perspectiveMatrix, XMVECTOR eye, XMVECTOR at, XMVECTOR up)
+void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 {
+	theMesh->actualBonesCount = theFile->uniqueVerticeCount;
 
 	for (unsigned int i = 0; i < theFile->uniqueVerticeCount; i++)
 	{
@@ -177,6 +183,188 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh, XM
 
 }
 
+void setupAnimData(exportFile* theFile, GraphicsSystem::object* theMesh)
+{
+	theMesh->theAnimation.duration = theFile->theAnimation.duration;
+	for (unsigned int i = 0; i < theFile->theAnimation.frames.size(); i++)
+	{
+		GraphicsSystem::keyframe newFrame;
+		newFrame.time = theFile->theAnimation.frames[i].time;
+		for (unsigned int j = 0; j < theFile->theAnimation.frames[i].joints.size(); j++)
+		{
+			XMFLOAT4X4 newJoint;
+			float* temp = theFile->theAnimation.frames[i].joints[j];
+
+			newJoint._11 = temp[0];
+			newJoint._12 = temp[1];
+			newJoint._13 = temp[2];
+			newJoint._14 = temp[3];
+
+			newJoint._21 = temp[4];
+			newJoint._22 = temp[5];
+			newJoint._23 = temp[6];
+			newJoint._24 = temp[7];
+
+			newJoint._31 = temp[8];
+			newJoint._32 = temp[9];
+			newJoint._33 = temp[10];
+			newJoint._34 = temp[11];
+
+			newJoint._41 = temp[12];
+			newJoint._42 = temp[13];
+			newJoint._43 = temp[14];
+			newJoint._44 = temp[15];
+			newFrame.joints.push_back(newJoint);
+		}
+		theMesh->theAnimation.frames.push_back(newFrame);
+	}
+}
+
+void playFrame(GraphicsSystem::object* theMesh)
+{
+	for (unsigned int i = 0; i < theMesh->actualBonesCount; i++)
+	{
+		XMFLOAT4 newPos;
+		XMFLOAT4X4 posMat = theMesh->theAnimation.frames[theMesh->currentFrame].joints[i];
+
+		newPos.x = posMat._41;
+		newPos.y = posMat._42;
+		newPos.z = posMat._43;
+		newPos.w = 1;
+		XMVECTOR currPos = XMLoadFloat4(&newPos);
+
+		XMMATRIX temp = XMLoadFloat4x4(&theMesh->transformMat);
+
+		XMStoreFloat4(&newPos, XMVector3Transform(currPos, temp));
+
+		theMesh->bones[i].position = newPos;
+	}
+	if (theMesh->actualBonesCount % 2 != 0)
+	{
+		XMFLOAT4 newPos;
+		XMFLOAT4X4 posMat = theMesh->theAnimation.frames[theMesh->currentFrame].joints[theMesh->actualBonesCount - 1];
+
+		newPos.x = posMat._41;
+		newPos.y = posMat._42;
+		newPos.z = posMat._43;
+		newPos.w = 1;
+		XMVECTOR currPos = XMLoadFloat4(&newPos);
+
+		XMMATRIX temp = XMLoadFloat4x4(&theMesh->transformMat);
+
+		XMStoreFloat4(&newPos, XMVector3Transform(currPos, temp));
+
+		theMesh->bones[theMesh->actualBonesCount].position = newPos;
+	}
+}
+
+void playTween(GraphicsSystem::object* theMesh)
+{
+	GraphicsSystem::keyframe* prevFrame = &theMesh->theAnimation.frames[theMesh->currentFrame];
+	GraphicsSystem::keyframe* nextFrame;
+	double ratio;
+
+	if (theMesh->currentFrame + 1 < (int)theMesh->theAnimation.frames.size())
+	{
+		nextFrame = &theMesh->theAnimation.frames[theMesh->currentFrame + 1];
+		ratio = theMesh->timePassed / nextFrame->time;
+	}
+	else
+	{
+		nextFrame = &theMesh->theAnimation.frames[0];
+		ratio = nextFrame->time / theMesh->timePassed;
+	}
+
+	
+	for (unsigned int i = 0; i < theMesh->actualBonesCount; i++)
+	{
+		XMFLOAT4 newPos;
+		XMFLOAT4X4 prevPosMat = prevFrame->joints[i];
+		XMFLOAT4X4 nextPosMat = nextFrame->joints[i];
+
+		newPos.x = ((nextPosMat._41 - prevPosMat._41) * ratio) + prevPosMat._41;
+		newPos.y = ((nextPosMat._42 - prevPosMat._42) * ratio) + prevPosMat._42;
+		newPos.z = ((nextPosMat._43 - prevPosMat._43) * ratio) + prevPosMat._43;
+		newPos.w = 1;
+
+		XMVECTOR currPos = XMLoadFloat4(&newPos);
+
+		XMMATRIX temp = XMLoadFloat4x4(&theMesh->transformMat);
+
+		XMStoreFloat4(&newPos, XMVector3Transform(currPos, temp));
+
+		theMesh->bones[i].position = newPos;
+	}
+	if (theMesh->actualBonesCount % 2 != 0)
+	{
+		XMFLOAT4 newPos;
+		XMFLOAT4X4 prevPosMat = prevFrame->joints[theMesh->actualBonesCount - 1];
+		XMFLOAT4X4 nextPosMat = nextFrame->joints[theMesh->actualBonesCount - 1];
+
+		newPos.x = ((nextPosMat._41 - prevPosMat._41) * ratio) + prevPosMat._41;
+		newPos.y = ((nextPosMat._42 - prevPosMat._42) * ratio) + prevPosMat._42;
+		newPos.z = ((nextPosMat._43 - prevPosMat._43) * ratio) + prevPosMat._43;
+		newPos.w = 1;
+
+		XMVECTOR currPos = XMLoadFloat4(&newPos);
+
+		XMMATRIX temp = XMLoadFloat4x4(&theMesh->transformMat);
+
+		XMStoreFloat4(&newPos, XMVector3Transform(currPos, temp));
+
+		theMesh->bones[theMesh->actualBonesCount].position = newPos;
+	}
+
+}
+
+void updatePoseData(GraphicsSystem::object* theMesh, double time, bool tween)
+{
+	theMesh->timePassed += time * timeMultiplier;
+
+	if (tween)
+	{
+		playTween(theMesh);
+
+		theMesh->currentFrame++;
+	}
+	else
+	{
+		if (theMesh->timePassed >= theMesh->theAnimation.frames[theMesh->currentFrame].time)
+		{
+			playFrame(theMesh);
+
+			theMesh->currentFrame++;
+		}
+	}
+
+	if (theMesh->timePassed >= theMesh->theAnimation.duration || theMesh->currentFrame >= (int)theMesh->theAnimation.frames.size())
+	{
+		theMesh->currentFrame = 0;
+		theMesh->timePassed = 0;
+	}
+}
+
+void moveFrame(GraphicsSystem::object* theMesh, bool forward)
+{
+	if (forward)
+	{
+		theMesh->currentFrame++;
+		if (theMesh->currentFrame >= (int)theMesh->theAnimation.frames.size())
+		{
+			theMesh->currentFrame = 0;
+		}
+		playFrame(theMesh);
+	}
+	else
+	{
+		theMesh->currentFrame--;
+		if (theMesh->currentFrame < 0)
+		{
+			theMesh->currentFrame = theMesh->theAnimation.frames.size() - 1;
+		}
+		playFrame(theMesh);
+	}
+}
 
 
 
@@ -220,6 +408,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theTeddyLoader->savePose(teddyPoseFile);
 	theTeddyLoader->saveAnimationStack(teddyPoseFile);
 	delete theTeddyLoader;
+
 
 #ifndef NDEBUG
 	AllocConsole();
@@ -275,64 +464,67 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	XMStoreFloat4x4(&camera, XMMatrixInverse(nullptr, XMMatrixLookAtLH(eye, at, up)));
 #pragma endregion
 
-
-
+#pragma region InitObjectData
 	//setup object data
 	setupMeshData(mageMeshFile, mageMesh, &perspectiveMatrix, eye, at, up);
 	delete mageMeshFile;
-	setupDebugPoseData(magePoseFile, mageMesh, &perspectiveMatrix, eye, at, up);
+	setupDebugPoseData(magePoseFile, mageMesh);
+	setupAnimData(magePoseFile, mageMesh);
 	delete magePoseFile;
 
 	setupMeshData(teddyMeshFile, teddyMesh, &perspectiveMatrix, eye, at, up);
 	delete teddyMeshFile;
-	setupDebugPoseData(teddyPoseFile, teddyMesh, &perspectiveMatrix, eye, at, up);
+	setupDebugPoseData(teddyPoseFile, teddyMesh);
+	setupAnimData(teddyPoseFile, teddyMesh);
 	delete teddyPoseFile;
+#pragma endregion
 
-
-
-	//Init model offsets, size, ect
+#pragma region Translations
 	//Mage
-	mageMesh->translateObject(-10.0f, 0.0f, 0.0f ,1.0f ,1.0f ,1.0f);
-
+	mageMesh->translateObject(-10.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 	//Teddy
-	teddyMesh->translateObject(0.0f, 0.0f, 0.0f, 0.2f, 0.2f, 0.2f);
-
-
-	//Init debug render
-	for (unsigned int i = 0; i < mageMesh->bones.size(); i++)
-	{
-		debugVerts.push_back(mageMesh->bones[i]);
-	}
-	for (unsigned int i = 0; i < teddyMesh->bones.size(); i++)
-	{
-		debugVerts.push_back(teddyMesh->bones[i]);
-	}
-
-
-	debugObject->vertexCount = debugVertCount;
-	debugObject->theObject = &debugVerts[0];
-
-	debugObject->topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-
-	XMStoreFloat4x4(&debugObject->theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
-	XMStoreFloat4x4(&debugObject->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
-	XMStoreFloat4x4(&debugObject->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation(0.0f, 0.0f, 0.0f)));
+	teddyMesh->translateObject(0.0f, 0.0f, 0.0f, 0.02f, 0.02f, 0.02f);
+#pragma endregion
 
 
 
 	//finish inits for buffers
 	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
-
 	graphicsStuff.basicSetUpIndexBuffer(&pipeData, mageMesh);
-
 	graphicsStuff.basicSetUpIndexBuffer(&pipeData, teddyMesh);
 
-	graphicsStuff.basicSetUpInOrderBuffer(&pipeData, debugObject);
 
 
 	while (running)
 	{
-		//timer stuff
+		//make sure to do any object movment before this
+#pragma region InitDebugRenderStuff 
+		debugVerts.clear();
+		//Init debug render
+		for (unsigned int i = 0; i < mageMesh->bones.size(); i++)
+		{
+			debugVerts.push_back(mageMesh->bones[i]);
+		}
+		for (unsigned int i = 0; i < teddyMesh->bones.size(); i++)
+		{
+			debugVerts.push_back(teddyMesh->bones[i]);
+		}
+
+
+		debugObject->vertexCount = debugVertCount;
+		debugObject->theObject = &debugVerts[0];
+
+		debugObject->topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+
+		XMStoreFloat4x4(&debugObject->theMatrix.projection, XMMatrixTranspose(perspectiveMatrix));
+		XMStoreFloat4x4(&debugObject->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+		XMStoreFloat4x4(&debugObject->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation(0.0f, 0.0f, 0.0f)));
+
+		graphicsStuff.basicSetUpInOrderBuffer(&pipeData, debugObject);
+#pragma endregion
+
+#pragma region TimerStuff
+
 		curr_time = std::chrono::high_resolution_clock::now();
 
 		double delta_time = std::chrono::duration<double>(curr_time - last_time).count();
@@ -340,16 +532,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		last_time = curr_time;
 
 		accum_time += delta_time;
-		//////////////////////
+#pragma endregion
+
 
 		XMStoreFloat4x4(&mageMesh->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
-
 		XMStoreFloat4x4(&teddyMesh->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
-
 		XMStoreFloat4x4(&debugObject->theMatrix.view, XMMatrixTranspose(XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera))));
 
 
 
+		if (playingAnim)
+		{
+			updatePoseData(mageMesh, delta_time, playingTween);
+			updatePoseData(teddyMesh, delta_time, playingTween);
+		}
+
+
+
+#pragma region Drawing Stuff
 		graphicsStuff.setGeneralPipelineStages(&pipeData);
 
 		//mageMesh draw 
@@ -366,6 +566,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		pipeData.swapchain->Present(1, 0);
+#pragma endregion
 
 
 		if (rotatingCamera)
@@ -452,6 +653,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					XMMATRIX result = XMMatrixMultiply(translation, tempCam);
 					XMStoreFloat4x4(&camera, result);
 				}
+					break;
+				case 'P':
+					playingAnim = !playingAnim;
+					break;
+				case 'J':
+					moveFrame(mageMesh, false);
+					moveFrame(teddyMesh, false);
+					break;
+				case 'K':
+					moveFrame(mageMesh, true);
+					moveFrame(teddyMesh, true);
+					break;
+				case 'T':
+					playingTween = !playingTween;
 					break;
 				default:
 					break;

@@ -137,6 +137,36 @@ namespace functionLibrary
 					mSubMeshes[0] = new SubMesh();
 				}
 
+				// Congregate all the data of a mesh to be cached in VBOs.
+				// If normal or UV is by polygon vertex, record all vertex attributes by polygon vertex.
+				mHasNormal = object->GetElementNormalCount() > 0;
+				mHasUV = object->GetElementUVCount() > 0;
+				FbxGeometryElement::EMappingMode lNormalMappingMode = FbxGeometryElement::eNone;
+				FbxGeometryElement::EMappingMode lUVMappingMode = FbxGeometryElement::eNone;
+				if (mHasNormal)
+				{
+					lNormalMappingMode = object->GetElementNormal(0)->GetMappingMode();
+					if (lNormalMappingMode == FbxGeometryElement::eNone)
+					{
+						mHasNormal = false;
+					}
+					if (mHasNormal && lNormalMappingMode != FbxGeometryElement::eByControlPoint)
+					{
+						mAllByControlPoint = false;
+					}
+				}
+				if (mHasUV)
+				{
+					lUVMappingMode = object->GetElementUV(0)->GetMappingMode();
+					if (lUVMappingMode == FbxGeometryElement::eNone)
+					{
+						mHasUV = false;
+					}
+					if (mHasUV && lUVMappingMode != FbxGeometryElement::eByControlPoint)
+					{
+						mAllByControlPoint = false;
+					}
+				}
 
 				// Allocate the array memory, by control point or by polygon vertex.
 				int lPolygonVertexCount = object->GetControlPointsCount();
@@ -148,13 +178,32 @@ namespace functionLibrary
 				theData->uniqueVerticeCount = lPolygonVertexCount;
 				theData->indicies = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
 				theData->indexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
-			
+				
+				FbxStringList lUVNames;
+				object->GetUVSetNames(lUVNames);
+				const char * lUVName = NULL;
+				if (mHasUV && lUVNames.GetCount())
+				{
+					lUVName = lUVNames[0];
+				}
 
 				// Populate the array with vertex attribute, if by control point.
 				const FbxVector4 * lControlPoints = object->GetControlPoints();
 				FbxVector4 lCurrentVertex;
+				FbxVector4 lCurrentNormal;
+				FbxVector2 lCurrentUV;
 				if (mAllByControlPoint)
 				{
+					const FbxGeometryElementNormal * lNormalElement = NULL;
+					const FbxGeometryElementUV * lUVElement = NULL;
+					if (mHasNormal)
+					{
+						lNormalElement = object->GetElementNormal(0);
+					}
+					if (mHasUV)
+					{
+						lUVElement = object->GetElementUV(0);
+					}
 					for (int lIndex = 0; lIndex < lPolygonVertexCount; ++lIndex)
 					{
 						// Save the vertex position.
@@ -164,6 +213,32 @@ namespace functionLibrary
 						theData->myData[lIndex].position.z = static_cast<float>(lCurrentVertex[2]);
 						theData->myData[lIndex].position.w = 1;
 
+						// Save the normal.
+						if (mHasNormal)
+						{
+							int lNormalIndex = lIndex;
+							if (lNormalElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+							{
+								lNormalIndex = lNormalElement->GetIndexArray().GetAt(lIndex);
+							}
+							lCurrentNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
+							theData->myData[lIndex].normal.x = static_cast<float>(lCurrentNormal[0]);
+							theData->myData[lIndex].normal.y = static_cast<float>(lCurrentNormal[1]);
+							theData->myData[lIndex].normal.z = static_cast<float>(lCurrentNormal[2]);
+						}
+
+						// Save the UV.
+						if (mHasUV)
+						{
+							int lUVIndex = lIndex;
+							if (lUVElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+							{
+								lUVIndex = lUVElement->GetIndexArray().GetAt(lIndex);
+							}
+							lCurrentUV = lUVElement->GetDirectArray().GetAt(lUVIndex);
+							theData->myData[lIndex].UV.x = static_cast<float>(lCurrentUV[0]);
+							theData->myData[lIndex].UV.y = static_cast<float>(lCurrentUV[1]);
+						}
 					}
 
 				}
@@ -199,12 +274,27 @@ namespace functionLibrary
 							theData->myData[lVertexCount].position.y = static_cast<float>(lCurrentVertex[1]);
 							theData->myData[lVertexCount].position.z = static_cast<float>(lCurrentVertex[2]);
 							theData->myData[lVertexCount].position.w = 1;
+
+							if (mHasNormal)
+							{
+								((FbxMesh*)object)->GetPolygonVertexNormal(lPolygonIndex, lVerticeIndex, lCurrentNormal);
+								theData->myData[lVertexCount].normal.x = static_cast<float>(lCurrentNormal[0]);
+								theData->myData[lVertexCount].normal.y = static_cast<float>(lCurrentNormal[1]);
+								theData->myData[lVertexCount].normal.z = static_cast<float>(lCurrentNormal[2]);
+							}
+
+							if (mHasUV)
+							{
+								bool lUnmappedUV;
+								((FbxMesh*)object)->GetPolygonVertexUV(lPolygonIndex, lVerticeIndex, lUVName, lCurrentUV, lUnmappedUV);
+								theData->myData[lVertexCount].UV.x = static_cast<float>(lCurrentUV[0]);
+								theData->myData[lVertexCount].UV.y = static_cast<float>(lCurrentUV[1]);
+							}
 						}
 						++lVertexCount;
 					}
 					mSubMeshes[lMaterialIndex]->TriangleCount += 1;
 				}
-
 
 				break;
 			}
@@ -281,13 +371,14 @@ namespace functionLibrary
 
 		FbxLongLong frameCount = theTime.GetFrameCount(FbxTime::EMode::eFrames24);
 
-
+		theData->theAnimation.duration = static_cast<double>(theTime.GetMilliSeconds());
+		
 		for (FbxLongLong i = 1; i < frameCount; i++)
 		{
 			exportFile::keyframe currentFrame;
 			FbxTime newTime;
-			newTime.SetFrame(frameCount, FbxTime::EMode::eFrames24);
-			currentFrame.time = static_cast<double>(newTime.Get());
+			newTime.SetFrame(i, FbxTime::EMode::eFrames24);
+			currentFrame.time = static_cast<double>(newTime.GetMilliSeconds());
 
 			for (unsigned int j = 0; j < nodeArray.size(); j++)
 			{

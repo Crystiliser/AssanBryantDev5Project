@@ -28,6 +28,13 @@ public:
 		XMFLOAT4 color;
 	};
 
+	struct fVertex
+	{
+		XMFLOAT4 position;
+		XMFLOAT3 normal;
+		XMFLOAT2 uv;
+	};
+
 	struct matriceData
 	{
 		XMFLOAT4X4 view;
@@ -35,14 +42,25 @@ public:
 		XMFLOAT4X4 model;
 	};
 
+	struct keyframe { double time; std::vector<XMFLOAT4X4> joints; };
+
+	struct animClip { double duration; std::vector<keyframe> frames; };
+
 	struct object
 	{
 		vertex* theObject;
+		fVertex* theFObject;
+		bool fullVert = false;
 		std::vector<vertex> bones;
+		unsigned int actualBonesCount;
 		matriceData theMatrix;
 		unsigned int* indices;
 		unsigned int vertexCount;
 		unsigned int indexCount = 0;
+		animClip theAnimation;
+		int currentFrame = 0;
+		XMFLOAT4X4 transformMat;
+		double timePassed = 0;
 
 		D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
@@ -52,20 +70,21 @@ public:
 
 		void translateObject(float xTranslate, float yTranslate, float zTranslate, float xScale, float yScale, float zScale)
 		{
-			XMMATRIX transformMat = XMMatrixMultiply( XMMatrixTranslation(xTranslate, yTranslate, zTranslate), XMMatrixScaling(xScale, yScale, zScale));
+			XMMATRIX temp = XMMatrixMultiply(XMMatrixTranslation(xTranslate, yTranslate, zTranslate), XMMatrixScaling(xScale, yScale, zScale));
 
-			XMStoreFloat4x4(&theMatrix.model, XMMatrixTranspose(transformMat));
+			XMStoreFloat4x4(&theMatrix.model, XMMatrixTranspose(temp));
 
+			XMStoreFloat4x4(&transformMat, temp);
 
 			for (unsigned int i = 0; i < bones.size(); i++)
 			{
 				XMVECTOR bonePos = XMLoadFloat4(&bones[i].position);
-				XMVECTOR fin = XMVector3Transform(bonePos, transformMat);
+				XMVECTOR fin = XMVector3Transform(bonePos, temp);
 				XMStoreFloat4(&bones[i].position, fin);
 			}
 		}
 	};
-
+	
 	XMMATRIX perspectiveProjection(float width, float height);
 
 	void initViewport(pipelineData* state, unsigned int width, unsigned int height);
