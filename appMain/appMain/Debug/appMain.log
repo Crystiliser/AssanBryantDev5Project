@@ -1,4 +1,4 @@
-﻿  appMain.cpp
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(590): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+﻿  GraphicsSystem.cpp
+cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.exe
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.pdb (Full PDB)
