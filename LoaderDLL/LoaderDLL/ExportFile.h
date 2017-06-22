@@ -63,6 +63,8 @@ public:
 		FLOAT4 position;
 		FLOAT4 normal;
 		FLOAT4 UV;
+		int joints[4] = { 0, 0, 0, 0 };
+		FLOAT4 weights = FLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 
 		bool operator==(const vertex a)
 		{

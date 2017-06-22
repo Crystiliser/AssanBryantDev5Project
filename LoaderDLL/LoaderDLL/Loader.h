@@ -38,7 +38,10 @@ namespace functionLibrary
 
 		LOADERAPI void saveAnimationStack(exportFile* theData);
 
-
+		LOADERAPI void saveSkinnedData(exportFile* theData);
+		LOADERAPI void getDeformer(exportFile* theData, FbxMesh* theMesh);
+		LOADERAPI void getCluster(exportFile* theData, FbxSkin* theSkin);
+		LOADERAPI void getDataFromCluster(exportFile* theData, FbxCluster* theCluster);
 
 
 		const int TRIANGLE_VERTEX_COUNT = 3;

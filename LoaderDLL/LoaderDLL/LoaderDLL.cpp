@@ -397,4 +397,94 @@ namespace functionLibrary
 			theData->theAnimation.frames.push_back(currentFrame);
 		}
 	}
+
+	void FBXLoader::saveSkinnedData(exportFile* theData)
+	{
+		unsigned int poseCount = theScene->GetPoseCount();
+
+		for (unsigned int i = 0; i < poseCount; i++)
+		{
+			FbxPose* object = theScene->GetPose(i);
+			if (object->IsBindPose())
+			{
+				unsigned int nodeCount = object->GetCount();
+				for (unsigned int j = 0; j < nodeCount; j++)
+				{
+					FbxNode* node = object->GetNode(j);
+					if (node->GetMesh() != nullptr)
+					{
+						getDeformer(theData, node->GetMesh());
+					}
+				}
+			}
+		}
+	}
+
+	void FBXLoader::getDeformer(exportFile* theData, FbxMesh* theMesh)
+	{
+		unsigned int deformerCount = theMesh->GetDeformerCount();
+		for (unsigned int i = 0; i < deformerCount; i++)
+		{
+			FbxDeformer* deformer = theMesh->GetDeformer(i);
+			if (deformer->GetDeformerType() == FbxDeformer::eSkin)
+			{
+				getCluster(theData, (FbxSkin*)deformer);
+			}
+		}
+	}
+
+	void FBXLoader::getCluster(exportFile* theData, FbxSkin* theSkin)
+	{
+		unsigned int clusterCount = theSkin->GetClusterCount();
+		for (unsigned int i = 0; i < clusterCount; i++)
+		{
+			FbxCluster* cluster = theSkin->GetCluster(i);
+			getDataFromCluster(theData, cluster);
+		}
+	}
+
+	void FBXLoader::getDataFromCluster(exportFile* theData, FbxCluster* theCluster)
+	{
+		unsigned int controlPointCount = theCluster->GetControlPointIndicesCount();
+		double* weights = theCluster->GetControlPointWeights();
+		int* indicies = theCluster->GetControlPointIndices();
+
+		FbxNode* theNode = theCluster->GetLink();
+		for (unsigned int i = 0; i < nodeArray.size(); i++)
+		{
+			if (*theNode == *nodeArray[i].node)
+			{
+				for (unsigned int j = 0; j < controlPointCount; j++)
+				{
+					double theWeight = weights[j];
+					int jointIndex = i;
+
+					int index = indicies[j];
+
+					switch (j)
+					{
+					case 0:
+						theData->myData[index].joints[0] = jointIndex;
+						theData->myData[index].weights.x = (float)theWeight;
+						break;
+					case 1:
+						theData->myData[index].joints[1] = jointIndex;
+						theData->myData[index].weights.y = (float)theWeight;
+						break;
+					case 2:
+						theData->myData[index].joints[2] = jointIndex;
+						theData->myData[index].weights.z = (float)theWeight;
+						break;
+					case 3:
+						theData->myData[index].joints[3] = jointIndex;
+						theData->myData[index].weights.w = (float)theWeight;
+						break;
+					default:
+						break;
+					}
+
+				}
+			}
+		}
+	}
 }

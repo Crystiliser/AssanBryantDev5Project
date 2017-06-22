@@ -412,6 +412,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theMageLoader->save(mageMeshFile);
 	theMageLoader->savePose(magePoseFile);
 	theMageLoader->saveAnimationStack(magePoseFile);
+	theMageLoader->saveSkinnedData(mageMeshFile);
 	delete theMageLoader;
 
 
@@ -420,6 +421,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theTeddyLoader->save(teddyMeshFile);
 	theTeddyLoader->savePose(teddyPoseFile);
 	theTeddyLoader->saveAnimationStack(teddyPoseFile);
+	theTeddyLoader->saveSkinnedData(teddyMeshFile);
 	delete theTeddyLoader;
 
 
