@@ -50,6 +50,7 @@ public:
 		XMFLOAT4X4 view;
 		XMFLOAT4X4 projection;
 		XMFLOAT4X4 model;
+		XMFLOAT4X4 pointLightPosition;
 	};
 
 	struct keyframe { double time; std::vector<XMFLOAT4X4> joints; };

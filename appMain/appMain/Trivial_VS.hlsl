@@ -4,6 +4,7 @@ cbuffer matriceData : register(b0)
 	matrix view;
 	matrix projection;
 	matrix model;
+	matrix pointLightPosition;
 };
 
 struct vertexShaderInput

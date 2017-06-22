@@ -62,6 +62,10 @@ bool playingAnim = false;
 bool playingTween = false;
 double timeMultiplier = 100;
 
+//lighting stuff
+float pointDistance = 1.0f;
+float pointDirection = 1.0f;
+
 
 //Functions
 
@@ -86,7 +90,7 @@ void setupMeshData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRI
 		temp.normal.z = theFile->myData[i].normal.z;
 
 		temp.uv.x = theFile->myData[i].UV.x;
-		temp.uv.y = 1.0 - theFile->myData[i].UV.y;
+		temp.uv.y = 1.0f - theFile->myData[i].UV.y;
 
 
 		theMesh->theObject[i] = temp;
@@ -530,7 +534,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	pipelineFull.dev->CreateSamplerState(&sampleDesc, &teddyMesh->textureSampler);
 
 	
-
+	last_time = std::chrono::high_resolution_clock::now();
 	while (running)
 	{
 		//make sure to do any object movment before this
@@ -582,6 +586,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			updatePoseData(mageMesh, delta_time, playingTween);
 			updatePoseData(teddyMesh, delta_time, playingTween);
 		}
+
+		pointDistance += (1.0f * delta_time * pointDirection);
+		if (pointDistance >= 5 || pointDistance <= -5)
+		{
+			pointDirection *= -1;
+		}
+
+		XMFLOAT3 pointLightPosition = XMFLOAT3(0.0f, 1.5f, pointDistance);
+		XMStoreFloat4x4(&mageMesh->theMatrix.pointLightPosition, XMMatrixTranspose(XMMatrixTranslation(pointLightPosition.x, pointLightPosition.y, pointLightPosition.z)));
+		XMStoreFloat4x4(&teddyMesh->theMatrix.pointLightPosition, XMMatrixTranspose(XMMatrixTranslation(pointLightPosition.x, pointLightPosition.y, pointLightPosition.z)));
+
+		
 
 
 

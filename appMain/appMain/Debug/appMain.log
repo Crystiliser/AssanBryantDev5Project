@@ -1,4 +1,4 @@
 ﻿  appMain.cpp
-c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(89): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\assan bryant\documents\github\assanbryantdev5project\appmain\appmain\appmain.cpp(590): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.exe
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.pdb (Full PDB)
