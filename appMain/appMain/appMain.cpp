@@ -6,6 +6,7 @@
 #include "appMain.h"
 #include "Loader.h"
 #include "GraphicsSystem.h"
+#include "DDSTextureLoader.h"
 #include <chrono>
 #include <vector>
 
@@ -27,7 +28,7 @@ GraphicsSystem::object* teddyMesh = new GraphicsSystem::object;
 
 GraphicsSystem::object* debugObject = new GraphicsSystem::object;
 unsigned int debugVertCount = 0;
-std::vector<GraphicsSystem::vertex> debugVerts;
+std::vector<GraphicsSystem::debugVert> debugVerts;
 
 
 // Global Variables:
@@ -37,7 +38,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HWND hWnd;
 
 GraphicsSystem graphicsStuff;
-GraphicsSystem::pipelineData pipeData;
+GraphicsSystem::pipelineData pipelineFull;
 
 
 //camera Stuff
@@ -56,7 +57,7 @@ time_point_t last_time;
 time_point_t curr_time;
 double accum_time{ 0.0 };
 
-//animatino stuff
+//animation stuff
 bool playingAnim = false;
 bool playingTween = false;
 double timeMultiplier = 100;
@@ -74,12 +75,18 @@ void setupMeshData(exportFile* theFile, GraphicsSystem::object* theMesh, XMMATRI
 	for (unsigned int i = 0; i < theFile->uniqueVerticeCount; i++)
 	{
 		GraphicsSystem::vertex temp;
-		temp.color = XMFLOAT4(Purple);
 
 		temp.position.x = theFile->myData[i].position.x;
 		temp.position.y = theFile->myData[i].position.y;
 		temp.position.z = theFile->myData[i].position.z;
 		temp.position.w = theFile->myData[i].position.w;
+
+		temp.normal.x = theFile->myData[i].normal.x;
+		temp.normal.y = theFile->myData[i].normal.y;
+		temp.normal.z = theFile->myData[i].normal.z;
+
+		temp.uv.x = theFile->myData[i].UV.x;
+		temp.uv.y = 1.0 - theFile->myData[i].UV.y;
 
 
 		theMesh->theObject[i] = temp;
@@ -104,13 +111,14 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 
 	for (unsigned int i = 0; i < theFile->uniqueVerticeCount; i++)
 	{
-		GraphicsSystem::vertex temp;
-		temp.color = XMFLOAT4(White);
+		GraphicsSystem::debugVert temp;
 
 		temp.position.x = theFile->myData[i].position.x;
 		temp.position.y = theFile->myData[i].position.y;
 		temp.position.z = theFile->myData[i].position.z;
 		temp.position.w = theFile->myData[i].position.w;
+
+		temp.color = XMFLOAT4(White);
 
 		theMesh->bones.push_back(temp);
 	}
@@ -120,9 +128,11 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 	unsigned int endPoint = theFile->uniqueVerticeCount;
 	if (theFile->uniqueVerticeCount % 2 != 0)
 	{
-		GraphicsSystem::vertex bufferVert;
+		GraphicsSystem::debugVert bufferVert;
 		bufferVert.position = theMesh->bones[theFile->uniqueVerticeCount - 1].position;
+
 		bufferVert.color = XMFLOAT4(White);
+
 		theMesh->bones.push_back(bufferVert);
 		endPoint++;
 	}
@@ -130,7 +140,7 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 	for (unsigned int i = 0; i < (endPoint - 1); i++)
 	{
 
-		GraphicsSystem::vertex xAxis1;
+		GraphicsSystem::debugVert xAxis1;
 		xAxis1.color = XMFLOAT4(Red);
 		xAxis1.position.x = theMesh->bones[i].position.x;
 		xAxis1.position.y = theMesh->bones[i].position.y;
@@ -138,7 +148,7 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 		xAxis1.position.w = theMesh->bones[i].position.w;
 		theMesh->bones.push_back(xAxis1);
 
-		GraphicsSystem::vertex xAxis2;
+		GraphicsSystem::debugVert xAxis2;
 		xAxis2.color = XMFLOAT4(Red);
 		xAxis2.position.x = theMesh->bones[i].position.x + 0.1f;
 		xAxis2.position.y = theMesh->bones[i].position.y;
@@ -146,7 +156,7 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 		xAxis2.position.w = theMesh->bones[i].position.w;
 		theMesh->bones.push_back(xAxis2);
 
-		GraphicsSystem::vertex yAxis1;
+		GraphicsSystem::debugVert yAxis1;
 		yAxis1.color = XMFLOAT4(Green);
 		yAxis1.position.x = theMesh->bones[i].position.x;
 		yAxis1.position.y = theMesh->bones[i].position.y;
@@ -154,7 +164,7 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 		yAxis1.position.w = theMesh->bones[i].position.w;
 		theMesh->bones.push_back(yAxis1);
 
-		GraphicsSystem::vertex yAxis2;
+		GraphicsSystem::debugVert yAxis2;
 		yAxis2.color = XMFLOAT4(Green);
 		yAxis2.position.x = theMesh->bones[i].position.x;
 		yAxis2.position.y = theMesh->bones[i].position.y + 0.1f;
@@ -162,7 +172,7 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 		yAxis2.position.w = theMesh->bones[i].position.w;
 		theMesh->bones.push_back(yAxis2);
 
-		GraphicsSystem::vertex zAxis1;
+		GraphicsSystem::debugVert zAxis1;
 		zAxis1.color = XMFLOAT4(Blue);
 		zAxis1.position.x = theMesh->bones[i].position.x;
 		zAxis1.position.y = theMesh->bones[i].position.y;
@@ -170,7 +180,7 @@ void setupDebugPoseData(exportFile* theFile, GraphicsSystem::object* theMesh)
 		zAxis1.position.w = theMesh->bones[i].position.w;
 		theMesh->bones.push_back(zAxis1);
 
-		GraphicsSystem::vertex zAxis2;
+		GraphicsSystem::debugVert zAxis2;
 		zAxis2.color = XMFLOAT4(Blue);
 		zAxis2.position.x = theMesh->bones[i].position.x;
 		zAxis2.position.y = theMesh->bones[i].position.y;
@@ -282,9 +292,9 @@ void playTween(GraphicsSystem::object* theMesh)
 		XMFLOAT4X4 prevPosMat = prevFrame->joints[i];
 		XMFLOAT4X4 nextPosMat = nextFrame->joints[i];
 
-		newPos.x = ((nextPosMat._41 - prevPosMat._41) * ratio) + prevPosMat._41;
-		newPos.y = ((nextPosMat._42 - prevPosMat._42) * ratio) + prevPosMat._42;
-		newPos.z = ((nextPosMat._43 - prevPosMat._43) * ratio) + prevPosMat._43;
+		newPos.x = ((nextPosMat._41 - prevPosMat._41) * (float)ratio) + prevPosMat._41;
+		newPos.y = ((nextPosMat._42 - prevPosMat._42) * (float)ratio) + prevPosMat._42;
+		newPos.z = ((nextPosMat._43 - prevPosMat._43) * (float)ratio) + prevPosMat._43;
 		newPos.w = 1;
 
 		XMVECTOR currPos = XMLoadFloat4(&newPos);
@@ -301,9 +311,9 @@ void playTween(GraphicsSystem::object* theMesh)
 		XMFLOAT4X4 prevPosMat = prevFrame->joints[theMesh->actualBonesCount - 1];
 		XMFLOAT4X4 nextPosMat = nextFrame->joints[theMesh->actualBonesCount - 1];
 
-		newPos.x = ((nextPosMat._41 - prevPosMat._41) * ratio) + prevPosMat._41;
-		newPos.y = ((nextPosMat._42 - prevPosMat._42) * ratio) + prevPosMat._42;
-		newPos.z = ((nextPosMat._43 - prevPosMat._43) * ratio) + prevPosMat._43;
+		newPos.x = ((nextPosMat._41 - prevPosMat._41) * (float)ratio) + prevPosMat._41;
+		newPos.y = ((nextPosMat._42 - prevPosMat._42) * (float)ratio) + prevPosMat._42;
+		newPos.z = ((nextPosMat._43 - prevPosMat._43) * (float)ratio) + prevPosMat._43;
 		newPos.w = 1;
 
 		XMVECTOR currPos = XMLoadFloat4(&newPos);
@@ -381,7 +391,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
 
 
 	// Initialize global strings
@@ -477,6 +486,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	setupDebugPoseData(teddyPoseFile, teddyMesh);
 	setupAnimData(teddyPoseFile, teddyMesh);
 	delete teddyPoseFile;
+
 #pragma endregion
 
 #pragma region Translations
@@ -489,11 +499,37 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 	//finish inits for buffers
-	graphicsStuff.initOverall(&pipeData, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
-	graphicsStuff.basicSetUpIndexBuffer(&pipeData, mageMesh);
-	graphicsStuff.basicSetUpIndexBuffer(&pipeData, teddyMesh);
+	graphicsStuff.initOverall(&pipelineFull, hWnd, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT);
+	graphicsStuff.setUpIndexBuffer(&pipelineFull, mageMesh);
+	graphicsStuff.setUpIndexBuffer(&pipelineFull, teddyMesh);
+
+	HRESULT result = CreateDDSTextureFromFile(pipelineFull.dev, L"Assets/MageTexture.dds",
+		(ID3D11Resource**)&mageMesh->theTexture, &mageMesh->textureView);
+
+	D3D11_SAMPLER_DESC sampleDesc;
+	sampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR;
+	sampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
+	sampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR;
+	sampleDesc.MipLODBias = 0.0f;
+	sampleDesc.MaxAnisotropy = 1;
+	sampleDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampleDesc.BorderColor[0] = 0;
+	sampleDesc.BorderColor[1] = 0;
+	sampleDesc.BorderColor[2] = 0;
+	sampleDesc.BorderColor[3] = 0;
+	sampleDesc.MinLOD = 0;
+	sampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	pipelineFull.dev->CreateSamplerState(&sampleDesc, &mageMesh->textureSampler);
 
 
+	result = CreateDDSTextureFromFile(pipelineFull.dev, L"Assets/TeddyTexture.dds",
+		(ID3D11Resource**)&teddyMesh->theTexture, &teddyMesh->textureView);
+
+
+	pipelineFull.dev->CreateSamplerState(&sampleDesc, &teddyMesh->textureSampler);
+
+	
 
 	while (running)
 	{
@@ -512,7 +548,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		debugObject->vertexCount = debugVertCount;
-		debugObject->theObject = &debugVerts[0];
+		debugObject->debugObject = &debugVerts[0];
 
 		debugObject->topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
 
@@ -520,7 +556,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		XMStoreFloat4x4(&debugObject->theMatrix.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 		XMStoreFloat4x4(&debugObject->theMatrix.model, XMMatrixTranspose(XMMatrixTranslation(0.0f, 0.0f, 0.0f)));
 
-		graphicsStuff.basicSetUpInOrderBuffer(&pipeData, debugObject);
+		graphicsStuff.debugSetUpInOrderBuffer(&pipelineFull, debugObject);
 #pragma endregion
 
 #pragma region TimerStuff
@@ -550,22 +586,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 #pragma region Drawing Stuff
-		graphicsStuff.setGeneralPipelineStages(&pipeData);
+		graphicsStuff.setGeneralPipelineStages(&pipelineFull);
 
 		//mageMesh draw 
-		graphicsStuff.setObjectPipelineStages(&pipeData, mageMesh);
-		graphicsStuff.drawIndex(&pipeData, mageMesh);
+		graphicsStuff.setObjectPipelineStages(&pipelineFull, mageMesh, false);
+		graphicsStuff.drawIndex(&pipelineFull, mageMesh);
 
 		//teddyMesh draw
-		graphicsStuff.setObjectPipelineStages(&pipeData, teddyMesh);
-		graphicsStuff.drawIndex(&pipeData, teddyMesh);
+		graphicsStuff.setObjectPipelineStages(&pipelineFull, teddyMesh, false);
+		graphicsStuff.drawIndex(&pipelineFull, teddyMesh);
 
 		//debugobject draw
-		graphicsStuff.setObjectPipelineStages(&pipeData, debugObject);
-		graphicsStuff.drawInOrder(&pipeData, debugObject);
+		graphicsStuff.setObjectPipelineStages(&pipelineFull, debugObject, true);
+		graphicsStuff.drawInOrder(&pipelineFull, debugObject);
 
 
-		pipeData.swapchain->Present(1, 0);
+		pipelineFull.swapchain->Present(1, 0);
 #pragma endregion
 
 
@@ -676,7 +712,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				running = false;
 				graphicsStuff.cleanUpObject(mageMesh);
 				graphicsStuff.cleanUpObject(teddyMesh);
-				graphicsStuff.cleanUpPipeLine(&pipeData);
+				graphicsStuff.cleanUpPipeLine(&pipelineFull);
 
 				break;
 			default:

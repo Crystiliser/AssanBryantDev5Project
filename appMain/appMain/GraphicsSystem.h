@@ -10,29 +10,39 @@ public:
 		ID3D11Device* dev = NULL;
 		ID3D11DeviceContext *devcon = NULL;
 		D3D11_VIEWPORT viewport;
-		ID3D11InputLayout* inputLayout = NULL;
-		ID3D11VertexShader* vertexShader = NULL;
-		ID3D11PixelShader* pixelShader = NULL;
+
+		ID3D11InputLayout* normalInputLayout = NULL;
+		ID3D11VertexShader* normalVertexShader = NULL;
+		ID3D11PixelShader* normalPixelShader = NULL;
+
+		ID3D11InputLayout* debugInputLayout = NULL;
+		ID3D11VertexShader* debugVertexShader = NULL;
+		ID3D11PixelShader* debugPixelShader = NULL;
+
 		ID3D11RenderTargetView* renderTarget = NULL;
 		ID3D11Texture2D* depthStencilBuffer = NULL;
 		ID3D11DepthStencilState* depthStencilState = NULL;
 		ID3D11DepthStencilView* depthStencilView;
 		ID3D11RasterizerState* rasterState = NULL;
-		UINT stride;
-		UINT offset;
+		
+		UINT normalStride;
+		UINT normalOffset;
+		
+		UINT debugStride;
+		UINT debugOffset;
 	};
 
 	struct vertex
 	{
 		XMFLOAT4 position = XMFLOAT4(0,0,0,0);
-		XMFLOAT4 color;
-	};
-
-	struct fVertex
-	{
-		XMFLOAT4 position;
 		XMFLOAT3 normal;
 		XMFLOAT2 uv;
+	};
+
+	struct debugVert
+	{
+		XMFLOAT4 position;
+		XMFLOAT4 color;
 	};
 
 	struct matriceData
@@ -49,9 +59,8 @@ public:
 	struct object
 	{
 		vertex* theObject;
-		fVertex* theFObject;
-		bool fullVert = false;
-		std::vector<vertex> bones;
+		debugVert* debugObject;
+		std::vector<debugVert> bones;
 		unsigned int actualBonesCount;
 		matriceData theMatrix;
 		unsigned int* indices;
@@ -67,6 +76,10 @@ public:
 		ID3D11Buffer* vertexBuffer = NULL;
 		ID3D11Buffer* constantBuffer = NULL;
 		ID3D11Buffer* indexBuffer = NULL;
+
+		ID3D11Texture2D* theTexture;
+		ID3D11ShaderResourceView* textureView;
+		ID3D11SamplerState* textureSampler;
 
 		void translateObject(float xTranslate, float yTranslate, float zTranslate, float xScale, float yScale, float zScale)
 		{
@@ -91,11 +104,13 @@ public:
 
 	void setGeneralPipelineStages(pipelineData* state);
 
-	void setObjectPipelineStages(pipelineData* state, object* theObject);
+	void setObjectPipelineStages(pipelineData* state, object* theObject, bool debug);
 
-	void basicSetUpIndexBuffer(pipelineData* state, object* theObject);
+	void setUpIndexBuffer(pipelineData* state, object* theObject);
 
 	void basicSetUpInOrderBuffer(pipelineData * state, object* theObject);
+
+	void debugSetUpInOrderBuffer(pipelineData * state, object* theObject);
 
 	void initDepthBuffer(pipelineData* state, unsigned int width, unsigned int height);
 

@@ -1,3 +1,6 @@
-﻿     Creating library C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.lib and object C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.exp
+﻿  stdafx.cpp
+  dllmain.cpp
+  LoaderDLL.cpp
+     Creating library C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.lib and object C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.exp
   LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.dll
   LoaderDLL.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\LoaderDLL.pdb (Full PDB)
