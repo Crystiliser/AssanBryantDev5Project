@@ -1,5 +1,8 @@
-﻿  compilation header save succeeded; see C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\appMain\TexturedPS.csh
-  compilation object save succeeded; see C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\TexturedPS.cso
+﻿  appMain.cpp
+  Generating Code...
+  Compiling...
   GraphicsSystem.cpp
+  Generating Code...
+cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.exe
   appMain.vcxproj -> C:\Users\Assan Bryant\Documents\GitHub\AssanBryantDev5Project\appMain\Debug\appMain.pdb (Full PDB)
