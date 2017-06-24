@@ -37,6 +37,8 @@ public:
 		XMFLOAT4 position = XMFLOAT4(0,0,0,0);
 		XMFLOAT3 normal;
 		XMFLOAT2 uv;
+		XMFLOAT4 weights;
+		XMINT4 boneIndicies;
 	};
 
 	struct debugVert
@@ -62,6 +64,7 @@ public:
 		vertex* theObject;
 		debugVert* debugObject;
 		std::vector<debugVert> bones;
+		XMFLOAT4X4* currentPoseMatrixArray = new XMFLOAT4X4[1000];
 		unsigned int actualBonesCount;
 		matriceData theMatrix;
 		unsigned int* indices;

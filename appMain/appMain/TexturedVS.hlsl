@@ -12,6 +12,8 @@ struct vertexShaderInput
 	float4 pos : POSITION;
 	float3 normal : NORMAL;
 	float2 uv : COLOR;
+	float4 weights : WEIGHTS;
+	float4 boneIndicies : BONES;
 };
 
 struct pixelShaderInput

@@ -25,7 +25,7 @@ float4 main(pixelShaderInput input ) : SV_TARGET
 
 	pointLight.position = input.pointLight;
 	pointLight.color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	pointLight.ambientIntensity = 0.1f;
+	pointLight.ambientIntensity = 0.3f;
 	pointLight.diffuseIntensity = 1.0f;
 
 	float4 result1;
@@ -37,7 +37,7 @@ float4 main(pixelShaderInput input ) : SV_TARGET
 
 	float4 result2 = (pointLight.color * pointLight.ambientIntensity);
 
-	color = saturate((color * result1) );
+	color = saturate((color * result1) + (color * result2) );
 
 	return color;
 }

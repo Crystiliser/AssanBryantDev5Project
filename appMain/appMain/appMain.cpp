@@ -509,6 +509,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	graphicsStuff.setUpIndexBuffer(&pipelineFull, mageMesh);
 	graphicsStuff.setUpIndexBuffer(&pipelineFull, teddyMesh);
 
+#pragma region textureStuff
+
+
 	HRESULT result = CreateDDSTextureFromFile(pipelineFull.dev, L"Assets/MageTexture.dds",
 		(ID3D11Resource**)&mageMesh->theTexture, &mageMesh->textureView);
 
@@ -535,7 +538,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	pipelineFull.dev->CreateSamplerState(&sampleDesc, &teddyMesh->textureSampler);
 
-	
+#pragma endregion
+
+
+
 	last_time = std::chrono::high_resolution_clock::now();
 	while (running)
 	{
@@ -589,7 +595,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			updatePoseData(teddyMesh, delta_time, playingTween);
 		}
 
-		pointDistance += (1.0f * delta_time * pointDirection);
+		pointDistance += (1.0f * (float)delta_time * pointDirection);
 		if (pointDistance >= 5 || pointDistance <= -5)
 		{
 			pointDirection *= -1;

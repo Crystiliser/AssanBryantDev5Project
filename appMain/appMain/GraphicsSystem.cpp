@@ -264,8 +264,8 @@ void GraphicsSystem::initRasterizerState(pipelineData * state)
 	rasterDesc.DepthBias = 0;
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
-	//rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	//rasterDesc.FillMode = D3D11_FILL_WIREFRAME;
 	rasterDesc.FrontCounterClockwise = true;
 	rasterDesc.MultisampleEnable = false;
 	rasterDesc.ScissorEnable = false;
@@ -284,12 +284,16 @@ void GraphicsSystem::initShaders(pipelineData * state)
 		D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT,
 		D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "WEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT,
+		D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BONES", 0, DXGI_FORMAT_R32G32B32A32_SINT, 0, D3D11_APPEND_ALIGNED_ELEMENT,
+		D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	state->dev->CreateVertexShader(TexturedVS, sizeof(TexturedVS), NULL, &state->normalVertexShader);
 	state->dev->CreatePixelShader(TexturedPS, sizeof(TexturedPS), NULL, &state->normalPixelShader);
 
-	state->dev->CreateInputLayout(inputDesc, 3, TexturedVS, sizeof(TexturedVS), &state->normalInputLayout);
+	state->dev->CreateInputLayout(inputDesc, 5, TexturedVS, sizeof(TexturedVS), &state->normalInputLayout);
 
 
 	D3D11_INPUT_ELEMENT_DESC inputDesc2[] =
